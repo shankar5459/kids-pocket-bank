@@ -96,7 +96,7 @@ PocketBank.views = (function () {
       return (
         '<div class="kid-card" style="--kid-color:' + kid.color + '">' +
           '<div class="kid-card-header">' +
-            '<span class="kid-avatar">' + kid.avatar + '</span>' +
+            PocketBank.renderAvatarHtml(kid.avatar) +
             '<div><h2 class="kid-name">' + PocketBank.escapeHtml(kid.name) + '</h2>' +
             '<p class="kid-balance">' + PocketBank.formatMoney(stats.balance) + '</p></div>' +
           '</div>' +
@@ -126,7 +126,7 @@ PocketBank.views = (function () {
     els.statementHeader.innerHTML =
       '<button type="button" class="btn-back" data-action="back-dashboard" aria-label="Back">&larr;</button>' +
       '<div class="statement-kid-info">' +
-        '<span class="kid-avatar">' + kid.avatar + '</span>' +
+        PocketBank.renderAvatarHtml(kid.avatar) +
         '<div><h2>' + PocketBank.escapeHtml(kid.name) + '</h2>' +
         '<p class="statement-balance">' + PocketBank.formatMoney(stats.balance) + '</p></div>' +
       '</div>';
@@ -153,8 +153,8 @@ PocketBank.views = (function () {
         '</select></label>' +
         '<label>Category<select id="filter-category">' +
           '<option value="all"' + (!filters.category || filters.category === 'all' ? ' selected' : '') + '>All</option>' +
-          PocketBank.CATEGORIES.map(function (c) {
-            return '<option value="' + c + '"' + (filters.category === c ? ' selected' : '') + '>' + c + '</option>';
+          PocketBank.getFilterCategories(kidId).map(function (c) {
+            return '<option value="' + PocketBank.escapeHtml(c) + '"' + (filters.category === c ? ' selected' : '') + '>' + PocketBank.escapeHtml(c) + '</option>';
           }).join('') +
         '</select></label>' +
         '<label>Search<input type="search" id="filter-search" placeholder="Description..." value="' + PocketBank.escapeHtml(filters.search || '') + '"></label>' +
@@ -288,7 +288,10 @@ PocketBank.views = (function () {
     document.getElementById('kid-name-error').textContent = '';
     var avatarPicker = document.getElementById('kid-avatar-picker');
     avatarPicker.innerHTML = PocketBank.KID_AVATARS.map(function (a, i) {
-      return '<button type="button" class="avatar-opt' + (i === 0 ? ' selected' : '') + '" data-avatar="' + a + '">' + a + '</button>';
+      var inner = PocketBank.isAvatarImage(a)
+        ? '<img src="' + PocketBank.escapeHtml(a) + '" alt="">'
+        : a;
+      return '<button type="button" class="avatar-opt' + (i === 0 ? ' selected' : '') + '" data-avatar="' + PocketBank.escapeHtml(a) + '">' + inner + '</button>';
     }).join('');
     openModal('modal-kid');
   }
@@ -310,7 +313,9 @@ PocketBank.views = (function () {
       var kid = txn ? PocketBank.store.getKid(txn.kidId) : null;
       kidSelectWrap.classList.add('hidden');
       kidReadonlyWrap.classList.remove('hidden');
-      document.getElementById('txn-kid-readonly').textContent = kid ? kid.avatar + ' ' + kid.name : '—';
+      document.getElementById('txn-kid-readonly').innerHTML = kid
+        ? PocketBank.renderAvatarHtml(kid.avatar, 'kid-avatar-inline') + '<span>' + PocketBank.escapeHtml(kid.name) + '</span>'
+        : '—';
       form.dataset.kidId = txn ? txn.kidId : '';
       fillTxnForm(txn);
       var auditEl = document.getElementById('txn-audit-meta');
@@ -331,7 +336,7 @@ PocketBank.views = (function () {
       }).join('');
       if (!kidId && kids.length) form.dataset.kidId = kids[0].id;
 
-      var lastCat = sessionStorage.getItem('pocketbank.lastCategory') || 'Pocket Money';
+      var lastCat = sessionStorage.getItem('pocketbank.lastCategory') || 'Allowance';
       fillTxnForm({
         type: 'credit',
         amountPaise: null,
@@ -341,7 +346,9 @@ PocketBank.views = (function () {
       });
     }
 
-    renderCategoryPills(form.querySelector('[name=category]').value || 'Pocket Money');
+    var preset = form.querySelector('[name=category]').value || 'Allowance';
+    renderCategoryPills(PocketBank.isPresetCategory(preset) ? preset : PocketBank.CATEGORY_OTHER);
+    updateCustomCategoryField(form.querySelector('[name=category]').value);
     clearTxnErrors();
     openModal('modal-txn');
   }
@@ -352,7 +359,34 @@ PocketBank.views = (function () {
     document.getElementById('txn-amount').value = txn.amountPaise ? PocketBank.paiseToInput(txn.amountPaise) : '';
     document.getElementById('txn-date').value = txn.date || PocketBank.todayDate();
     document.getElementById('txn-description').value = txn.description || '';
-    document.querySelector('#txn-form [name=category]').value = txn.category || 'Pocket Money';
+    applyCategoryToForm(txn.category || 'Allowance');
+  }
+
+  function applyCategoryToForm(category) {
+    var preset = PocketBank.isPresetCategory(category) ? category : PocketBank.CATEGORY_OTHER;
+    document.querySelector('#txn-form [name=category]').value = preset;
+    var customWrap = document.getElementById('txn-custom-category-wrap');
+    var customInput = document.getElementById('txn-custom-category');
+    if (preset === PocketBank.CATEGORY_OTHER) {
+      customWrap.classList.remove('hidden');
+      customInput.value = PocketBank.isPresetCategory(category) ? '' : category;
+    } else {
+      customWrap.classList.add('hidden');
+      customInput.value = '';
+    }
+  }
+
+  function updateCustomCategoryField(selectedPreset) {
+    var customWrap = document.getElementById('txn-custom-category-wrap');
+    var customInput = document.getElementById('txn-custom-category');
+    if (selectedPreset === PocketBank.CATEGORY_OTHER) {
+      customWrap.classList.remove('hidden');
+      customInput.focus();
+    } else {
+      customWrap.classList.add('hidden');
+      customInput.value = '';
+      document.getElementById('txn-custom-category-error').textContent = '';
+    }
   }
 
   function setTxnType(type) {
@@ -370,7 +404,7 @@ PocketBank.views = (function () {
   }
 
   function clearTxnErrors() {
-    ['txn-amount-error', 'txn-date-error', 'txn-desc-error'].forEach(function (id) {
+    ['txn-amount-error', 'txn-date-error', 'txn-desc-error', 'txn-custom-category-error'].forEach(function (id) {
       document.getElementById(id).textContent = '';
     });
   }
@@ -395,6 +429,7 @@ PocketBank.views = (function () {
     openTxnModal: openTxnModal,
     setTxnType: setTxnType,
     renderCategoryPills: renderCategoryPills,
+    updateCustomCategoryField: updateCustomCategoryField,
     clearTxnErrors: clearTxnErrors,
     countActiveFilters: countActiveFilters
   };

@@ -1,6 +1,6 @@
 {
-  "name": "Pocket Money Bank",
-  "short_name": "Pocket Bank",
+  "name": "Piggy Pal",
+  "short_name": "Piggy Pal",
   "description": "Track kids' pocket money earnings and spending",
   "start_url": "./index.html",
   "scope": "./",

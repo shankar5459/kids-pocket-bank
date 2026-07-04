@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1E3A5F">
-  <meta name="description" content="Track kids' pocket money earnings and spending">
+  <meta name="description" content="Piggy Pal — track kids' pocket money earnings and spending">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Pocket Bank">
-  <title>Pocket Money Bank</title>
+  <meta name="apple-mobile-web-app-title" content="Piggy Pal">
+  <title>Piggy Pal</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -18,7 +18,7 @@
   <div id="auth-screen" class="auth-screen">
     <div class="auth-card">
       <img src="icons/icon-192.png" alt="" class="auth-logo" width="96" height="96">
-      <h1 class="auth-title">Pocket Money Bank</h1>
+      <h1 class="auth-title">Piggy Pal</h1>
       <p class="auth-subtitle">Sign in to manage pocket money</p>
       <p class="auth-note">Use the account created by the parent/admin.</p>
 
@@ -28,6 +28,10 @@
         </label>
         <label class="form-label">Password
           <input type="password" id="login-password" required autocomplete="current-password" placeholder="Password">
+        </label>
+        <label class="form-checkbox login-show-password">
+          <input type="checkbox" id="login-show-password">
+          Show password
         </label>
         <p id="login-error" class="field-error auth-error hidden" role="alert"></p>
         <button type="submit" id="login-submit" class="btn btn-primary btn-block">Sign in</button>
@@ -88,7 +92,7 @@
     <div id="app">
       <header class="app-header">
         <div class="header-top">
-          <h1>Pocket Money Bank</h1>
+          <h1>Piggy Pal</h1>
           <div id="sync-status" class="sync-status sync-status-syncing" title="Checking sync status…">
             <span class="sync-dot" aria-hidden="true"></span>
             <span class="sync-label">Syncing</span>
@@ -219,7 +223,7 @@
           </div>
           <form id="txn-form" class="modal-body" data-mode="add">
             <input type="hidden" id="txn-type" name="type" value="credit">
-            <input type="hidden" name="category" value="Pocket Money">
+            <input type="hidden" name="category" value="Allowance">
 
             <div id="txn-kid-select-wrap">
               <label class="form-label">Kid
@@ -254,6 +258,13 @@
 
             <p class="form-label">Category</p>
             <div id="category-pills" class="category-pills"></div>
+
+            <div id="txn-custom-category-wrap" class="hidden">
+              <label class="form-label" for="txn-custom-category">Custom Category
+                <input type="text" id="txn-custom-category" autocomplete="off" placeholder="Enter category name">
+              </label>
+              <p id="txn-custom-category-error" class="field-error"></p>
+            </div>
 
             <p id="txn-audit-meta" class="audit-meta hidden"></p>
 

@@ -275,7 +275,7 @@ PocketBank.store = (function () {
     var envelope = raw;
     var payload = raw;
 
-    if (raw.format === 'pocketbank-backup' || raw.format === 'kidbank-backup') {
+    if (raw.format === 'pocketbank-backup' || raw.format === 'kidbank-backup' || raw.format === 'piggy-pal-backup') {
       if (typeof raw.version !== 'number') return { ok: false, error: 'Missing backup version' };
       if (!raw.data || typeof raw.data !== 'object') return { ok: false, error: 'Missing data section' };
       payload = raw.data;
@@ -310,7 +310,10 @@ PocketBank.store = (function () {
       if (!Number.isInteger(t.amountPaise) || t.amountPaise <= 0) {
         return { ok: false, error: 'Invalid amount' };
       }
-      if (PocketBank.CATEGORIES.indexOf(t.category) === -1) {
+      if (!t.category || typeof t.category !== 'string' || !t.category.trim()) {
+        return { ok: false, error: 'Invalid category' };
+      }
+      if (t.category.trim() === PocketBank.CATEGORY_OTHER) {
         return { ok: false, error: 'Invalid category' };
       }
       if (!kidIds[t.kidId]) {

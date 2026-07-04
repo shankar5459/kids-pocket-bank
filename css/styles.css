@@ -198,6 +198,28 @@ body.modal-open { overflow: hidden; }
   gap: 12px;
 }
 
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  user-select: none;
+  margin: -4px 0 0;
+}
+
+.form-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.login-show-password {
+  margin-bottom: 4px;
+}
+
 .auth-error {
   min-height: 1.25em;
   text-align: center;
@@ -434,6 +456,31 @@ body.modal-open { overflow: hidden; }
 }
 
 .kid-avatar { font-size: 2.5rem; line-height: 1; }
+
+.kid-avatar-img,
+.kid-avatar-inline {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.kid-avatar-inline {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+#txn-kid-readonly {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
 
 .kid-name {
   margin: 0;
@@ -1004,6 +1051,18 @@ body.app-active .toast {
   border-radius: 50%;
   background: var(--color-surface);
   cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-opt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .avatar-opt.selected {

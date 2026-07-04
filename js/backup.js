@@ -15,14 +15,14 @@ PocketBank.backup = (function () {
 
   function exportBackup() {
     var envelope = {
-      format: 'pocketbank-backup',
+      format: 'piggy-pal-backup',
       version: 1,
       exportedAt: new Date().toISOString(),
       data: PocketBank.store.getRawData()
     };
     var json = JSON.stringify(envelope, null, 2);
     var blob = new Blob([json], { type: 'application/json' });
-    downloadBlob(blob, 'pocketbank-backup-' + PocketBank.todayDate() + '.json');
+    downloadBlob(blob, 'piggy-pal-backup-' + PocketBank.todayDate() + '.json');
   }
 
   function importBackup(file) {
