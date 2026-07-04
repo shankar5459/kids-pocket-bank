@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pocketbank-v5';
+const CACHE_NAME = 'pocketbank-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './js/family-service.js',
   './js/kids-service.js',
   './js/transactions-service.js',
+  './js/sync-service.js',
   './js/family-setup.js',
   './js/auth.js',
   './js/utils.js',

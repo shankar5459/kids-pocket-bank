@@ -87,7 +87,13 @@
   <div id="app-shell" class="hidden">
     <div id="app">
       <header class="app-header">
-        <h1>Pocket Money Bank</h1>
+        <div class="header-top">
+          <h1>Pocket Money Bank</h1>
+          <div id="sync-status" class="sync-status sync-status-syncing" title="Checking sync status…">
+            <span class="sync-dot" aria-hidden="true"></span>
+            <span class="sync-label">Syncing</span>
+          </div>
+        </div>
         <p id="header-user-email" class="header-user-email"></p>
       </header>
 
@@ -117,23 +123,31 @@
           <div class="notice notice-account">
             <h3>Account</h3>
             <p>Signed in as <strong id="settings-user-email"></strong></p>
+            <p class="form-hint">User ID: <code id="settings-user-id" class="mono-id">—</code></p>
             <button type="button" class="btn btn-outline btn-block" data-action="logout">Sign out</button>
           </div>
 
           <div class="notice notice-family">
             <h3>Family</h3>
             <p>Family: <strong id="settings-family-name">—</strong></p>
+            <p class="form-hint">Family ID: <code id="settings-family-id" class="mono-id">—</code></p>
             <p>Invite code: <strong id="settings-invite-code" class="invite-code">—</strong>
               <button type="button" class="btn btn-outline btn-sm" data-action="copy-invite">Copy</button>
             </p>
             <p class="form-hint">Share the invite code so your spouse can join the same family.</p>
           </div>
 
+          <div class="notice notice-sync">
+            <h3>Sync status</h3>
+            <p id="settings-sync-status" class="sync-status-text">Checking…</p>
+            <p class="form-hint">Changes sync automatically when you are online. Offline edits queue and upload when reconnected.</p>
+          </div>
+
           <div class="notice notice-info">
             <h3>Your data is synced to the cloud</h3>
             <ul>
               <li>Kid profiles and transactions sync in real time for your family.</li>
-              <li>GitHub Pages only delivers the app files — your data lives in Firebase Firestore.</li>
+              <li>GitHub Pages delivers the app — your data lives in Firebase Firestore.</li>
               <li>Export a JSON backup regularly for an offline copy.</li>
             </ul>
           </div>
@@ -157,7 +171,8 @@
             <button type="button" class="btn btn-primary btn-block" data-action="export-backup">Export Backup (JSON)</button>
             <button type="button" class="btn btn-outline btn-block" id="btn-import">Import Backup (JSON)</button>
             <input type="file" id="import-file" accept=".json,application/json" class="hidden" aria-hidden="true">
-            <button type="button" class="btn btn-outline btn-block btn-danger-text" data-action="clear-all">Clear All Data</button>
+            <button type="button" class="btn btn-outline btn-block" data-action="clear-cache">Clear Local Cache</button>
+            <button type="button" class="btn btn-outline btn-block btn-danger-text" data-action="clear-all">Delete All Transactions (Cloud)</button>
           </div>
         </section>
       </main>
@@ -240,6 +255,8 @@
             <p class="form-label">Category</p>
             <div id="category-pills" class="category-pills"></div>
 
+            <p id="txn-audit-meta" class="audit-meta hidden"></p>
+
             <button type="submit" class="btn btn-primary btn-block btn-sticky">Save</button>
           </form>
         </div>
@@ -270,6 +287,7 @@
   <script src="js/family-service.js"></script>
   <script src="js/kids-service.js"></script>
   <script src="js/transactions-service.js"></script>
+  <script src="js/sync-service.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/store.js"></script>
   <script src="js/backup.js"></script>

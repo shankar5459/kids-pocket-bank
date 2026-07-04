@@ -8,6 +8,8 @@ PocketBank.app = (function () {
     filters: {},
     filtersOpen: false
   };
+  var eventsBound = false;
+  var savingTxn = false;
 
   function refresh() {
     PocketBank.views.renderDashboard();
@@ -89,6 +91,8 @@ PocketBank.app = (function () {
   }
 
   async function saveTransaction() {
+    if (savingTxn) return;
+
     var form = document.getElementById('txn-form');
     var mode = form.dataset.mode;
     var txnId = form.dataset.txnId;
@@ -97,30 +101,37 @@ PocketBank.app = (function () {
     var data = validateTxnForm(mode, txnId, kidId);
     if (!data) return;
 
-    var ok = await checkOverdraft(kidId, data.type, data.amountPaise, mode === 'edit' ? txnId : null);
-    if (!ok) return;
+    savingTxn = true;
+    var submitBtn = form.querySelector('[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
+      var ok = await checkOverdraft(kidId, data.type, data.amountPaise, mode === 'edit' ? txnId : null);
+      if (!ok) return;
+
       if (mode === 'edit') {
-      await PocketBank.store.updateTransaction(txnId, {
-        type: data.type,
-        amountPaise: data.amountPaise,
-        date: data.date,
-        description: data.description,
-        category: data.category
-      });
-      PocketBank.views.closeModals();
-      PocketBank.views.showToast('Transaction updated');
-    } else {
-      await PocketBank.store.addTransaction(kidId, data.type, data.amountPaise, data.date, data.description, data.category);
-      sessionStorage.setItem('pocketbank.lastCategory', data.category);
-      PocketBank.views.closeModals();
-      PocketBank.views.showToast('Transaction saved');
+        await PocketBank.store.updateTransaction(txnId, {
+          type: data.type,
+          amountPaise: data.amountPaise,
+          date: data.date,
+          description: data.description,
+          category: data.category
+        });
+        PocketBank.views.closeModals();
+        PocketBank.views.showToast('Transaction updated');
+      } else {
+        await PocketBank.store.addTransaction(kidId, data.type, data.amountPaise, data.date, data.description, data.category);
+        sessionStorage.setItem('pocketbank.lastCategory', data.category);
+        PocketBank.views.closeModals();
+        PocketBank.views.showToast('Transaction saved');
+      }
+      refresh();
+    } catch (err) {
+      PocketBank.views.showToast(err.message || 'Failed to save transaction.');
+    } finally {
+      savingTxn = false;
+      if (submitBtn) submitBtn.disabled = false;
     }
-    refresh();
-  } catch (err) {
-    PocketBank.views.showToast(err.message || 'Failed to save transaction.');
-  }
   }
 
   async function deleteTransaction(txnId) {
@@ -184,7 +195,8 @@ PocketBank.app = (function () {
         '<p><strong>Import backup from ' + dateLabel + '?</strong></p>' +
         '<p>This backup contains ' + incoming.kids.length + ' kid(s) and ' + incoming.transactions.length + ' transaction(s).</p>' +
         '<p><strong>This will REPLACE all kids and transactions in your family cloud.</strong></p>' +
-        '<p>Current data: ' + current.kids.length + ' kid(s), ' + current.transactions.length + ' transaction(s).</p>';
+        '<p>Current data: ' + current.kids.length + ' kid(s), ' + current.transactions.length + ' transaction(s).</p>' +
+        '<p>This cannot be undone. Export a backup first if you are unsure.</p>';
 
       var ok = await PocketBank.views.showConfirm(msg, 'Replace & Import', 'btn-danger');
       if (!ok) return;
@@ -248,12 +260,69 @@ PocketBank.app = (function () {
     }
   }
 
+  async function deleteKid(kidId) {
+    var kid = PocketBank.store.getKid(kidId);
+    if (!kid) return;
+
+    var txnCount = PocketBank.store.getTransactionCountForKid(kidId);
+    var msg;
+    if (txnCount > 0) {
+      msg =
+        '<p><strong>Delete ' + PocketBank.escapeHtml(kid.name) + '?</strong></p>' +
+        '<p>This kid has <strong>' + txnCount + ' transaction(s)</strong> in the cloud.</p>' +
+        '<p>Deleting the kid will <strong>not</strong> delete those transactions — they will become orphaned.</p>' +
+        '<p>Are you sure you want to delete this kid profile?</p>';
+    } else {
+      msg =
+        '<p><strong>Delete ' + PocketBank.escapeHtml(kid.name) + '?</strong></p>' +
+        '<p>This kid has no transactions. The profile will be removed from your family.</p>';
+    }
+
+    var ok = await PocketBank.views.showConfirm(msg, 'Delete Kid', 'btn-danger');
+    if (!ok) return;
+
+    try {
+      await PocketBank.store.deleteKid(kidId);
+      if (state.statementKidId === kidId) {
+        state.statementKidId = null;
+        navigate('dashboard');
+      } else {
+        refresh();
+      }
+      PocketBank.views.showToast('Kid deleted');
+    } catch (err) {
+      PocketBank.views.showToast(err.message || 'Failed to delete kid.');
+    }
+  }
+
+  async function clearLocalCache() {
+    var msg =
+      '<p><strong>Clear local cache?</strong></p>' +
+      '<p>This removes legacy localStorage data and cached app files on this device.</p>' +
+      '<p>Your cloud data in Firestore is <strong>not</strong> deleted.</p>' +
+      '<p>You stay signed in. Reload the app after clearing.</p>';
+
+    var ok = await PocketBank.views.showConfirm(msg, 'Clear Cache', 'btn-primary');
+    if (!ok) return;
+
+    try {
+      await PocketBank.store.clearLocalCache();
+      PocketBank.views.showSettingsStatus('Local cache cleared. Reloading…', 'success');
+      setTimeout(function () { window.location.reload(); }, 1200);
+    } catch (err) {
+      PocketBank.views.showSettingsStatus(err.message || 'Failed to clear cache.', 'error');
+    }
+  }
+
   async function offerLegacyMigration() {
     if (!PocketBank.store.hasLegacyLocalData()) return;
     await migrateLegacyData();
   }
 
   function bindEvents() {
+    if (eventsBound) return;
+    eventsBound = true;
+
     document.getElementById('app').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -310,8 +379,14 @@ PocketBank.app = (function () {
           PocketBank.backup.exportBackup();
           PocketBank.views.showSettingsStatus('Backup downloaded.', 'success');
           break;
+        case 'delete-kid':
+          deleteKid(btn.dataset.kidId);
+          break;
         case 'clear-all':
           clearAllData();
+          break;
+        case 'clear-cache':
+          clearLocalCache();
           break;
         case 'migrate-legacy':
           migrateLegacyData();
@@ -384,10 +459,13 @@ PocketBank.app = (function () {
   }
 
   function init() {
+    if (PocketBank.syncService) PocketBank.syncService.init();
     PocketBank.views.init(function () {
-      bindEvents();
-      navigate('dashboard');
-      offerLegacyMigration();
+      if (!eventsBound) {
+        bindEvents();
+        navigate('dashboard');
+        offerLegacyMigration();
+      }
     });
   }
 

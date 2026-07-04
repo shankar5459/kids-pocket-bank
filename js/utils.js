@@ -69,6 +69,34 @@ PocketBank.sanitizeFilename = function (name) {
   return name.replace(/[^a-z0-9\-_]/gi, '-').replace(/-+/g, '-').toLowerCase();
 };
 
+PocketBank.formatDateTime = function (iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch (e) {
+    return iso;
+  }
+};
+
+PocketBank.formatAuditUser = function (uid) {
+  var user = PocketBank.firebaseService && PocketBank.firebaseService.getCurrentUser();
+  if (user && uid === user.uid) return 'you';
+  if (!uid) return 'unknown';
+  return 'a family member';
+};
+
+PocketBank.formatAuditMeta = function (txn) {
+  if (!txn) return '';
+  var lines = [];
+  if (txn.createdAt) {
+    lines.push('Added ' + PocketBank.formatDateTime(txn.createdAt) + ' by ' + PocketBank.formatAuditUser(txn.createdBy));
+  }
+  if (txn.updatedAt && txn.updatedAt !== txn.createdAt) {
+    lines.push('Updated ' + PocketBank.formatDateTime(txn.updatedAt) + ' by ' + PocketBank.formatAuditUser(txn.updatedBy));
+  }
+  return lines.join(' · ');
+};
+
 PocketBank.txnEffect = function (txn) {
   return txn.type === 'credit' ? txn.amountPaise : -txn.amountPaise;
 };

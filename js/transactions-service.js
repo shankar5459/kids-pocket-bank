@@ -52,6 +52,17 @@ PocketBank.transactionsService = (function () {
     });
   }
 
+  function track(op) {
+    if (PocketBank.syncService) {
+      return PocketBank.syncService.trackWrite(op).catch(function (err) {
+        return Promise.reject(PocketBank.firebaseService.wrapFirestoreError(err));
+      });
+    }
+    return op.catch(function (err) {
+      return Promise.reject(PocketBank.firebaseService.wrapFirestoreError(err));
+    });
+  }
+
   function subscribe(fid, onChange) {
     unsubscribeTransactions();
     familyId = fid;
@@ -66,10 +77,16 @@ PocketBank.transactionsService = (function () {
         });
         sortTransactions(transactions);
         ready = true;
+        if (PocketBank.syncService) {
+          PocketBank.syncService.reportTransactionsSnapshot(snapshot.metadata);
+        }
         if (onChange) onChange(transactions.slice());
       }, function (err) {
         console.error('Transactions listener error:', err);
         ready = false;
+        if (PocketBank.syncService) {
+          PocketBank.syncService.reportListenerError('transactions', err);
+        }
       });
   }
 
@@ -140,12 +157,12 @@ PocketBank.transactionsService = (function () {
       updatedBy: uid
     };
 
-    return transactionsCollection().doc(txnId).set(txn).then(function () {
+    return track(transactionsCollection().doc(txnId).set(txn).then(function () {
       return Object.assign({}, txn, {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
-    });
+    }));
   }
 
   function updateTransaction(id, fields) {
@@ -160,42 +177,51 @@ PocketBank.transactionsService = (function () {
         updates[key] = key === 'description' ? fields[key].trim() : fields[key];
       }
     });
-    return transactionsCollection().doc(id).update(updates).then(function () {
+    return track(transactionsCollection().doc(id).update(updates).then(function () {
       var existing = transactions.find(function (t) { return t.id === id; });
       if (!existing) return null;
       return Object.assign({}, existing, updates, {
         updatedAt: new Date().toISOString()
       });
-    });
+    }));
   }
 
   function deleteTransaction(id) {
-    return transactionsCollection().doc(id).delete().then(function () {
+    return track(transactionsCollection().doc(id).delete().then(function () {
       return true;
-    });
-  }
-
-  function importTransactions(txns) {
-    var uid = currentUid();
-    return runBatches(txns, function (batch, txn) {
-      var ref = transactionsCollection().doc(txn.id);
-      batch.set(ref, docPayload(txn, uid, true));
-    });
+    }));
   }
 
   function deleteAllTransactions() {
     var refs = transactions.map(function (t) {
       return transactionsCollection().doc(t.id);
     });
-    return runBatches(refs, function (batch, ref) {
+    return track(runBatches(refs, function (batch, ref) {
       batch.delete(ref);
-    });
+    }));
   }
 
   function replaceAll(txns) {
-    return deleteAllTransactions().then(function () {
-      return importTransactions(txns);
+    var uid = currentUid();
+    var refs = transactions.map(function (t) {
+      return transactionsCollection().doc(t.id);
     });
+    return track(
+      runBatches(refs, function (batch, ref) {
+        batch.delete(ref);
+      }).then(function () {
+        return runBatches(txns, function (batch, txn) {
+          batch.set(transactionsCollection().doc(txn.id), docPayload(txn, uid, true));
+        });
+      })
+    );
+  }
+
+  function importTransactions(txns) {
+    var uid = currentUid();
+    return track(runBatches(txns, function (batch, txn) {
+      batch.set(transactionsCollection().doc(txn.id), docPayload(txn, uid, true));
+    }));
   }
 
   function getTransactions(kidId) {

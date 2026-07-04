@@ -23,6 +23,15 @@ PocketBank.firebaseService = (function () {
     firebase.initializeApp(PocketBank.firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(function (err) {
+      if (err.code === 'failed-precondition') {
+        console.warn('Firestore persistence unavailable: multiple tabs open.');
+      } else if (err.code === 'unimplemented') {
+        console.warn('Firestore persistence is not supported in this browser.');
+      } else {
+        console.warn('Firestore persistence failed:', err.message);
+      }
+    });
     initialized = true;
     return auth;
   }
@@ -70,6 +79,26 @@ PocketBank.firebaseService = (function () {
     return messages[code] || (error && error.message) || 'Login failed. Please try again.';
   }
 
+  function mapFirestoreError(error) {
+    var code = error && error.code ? error.code : '';
+    var messages = {
+      'permission-denied': 'You do not have permission for this action. Make sure you are signed in and part of this family.',
+      'unavailable': 'Could not reach the server. Check your connection — offline changes will sync when you are back online.',
+      'failed-precondition': 'This action could not be completed. Try refreshing the page.',
+      'resource-exhausted': 'Too many requests. Please wait a moment and try again.',
+      'unauthenticated': 'Your session expired. Please sign in again.',
+      'not-found': 'This record was not found. It may have been deleted on another device.',
+      'already-exists': 'This record already exists.',
+      'cancelled': 'The operation was cancelled.',
+      'deadline-exceeded': 'The request timed out. Check your connection and try again.'
+    };
+    return messages[code] || (error && error.message) || 'Something went wrong. Please try again.';
+  }
+
+  function wrapFirestoreError(err) {
+    return new Error(mapFirestoreError(err));
+  }
+
   return {
     init: init,
     isConfigReady: isConfigReady,
@@ -78,6 +107,8 @@ PocketBank.firebaseService = (function () {
     login: login,
     logout: logout,
     getCurrentUser: getCurrentUser,
-    mapAuthError: mapAuthError
+    mapAuthError: mapAuthError,
+    mapFirestoreError: mapFirestoreError,
+    wrapFirestoreError: wrapFirestoreError
   };
 })();

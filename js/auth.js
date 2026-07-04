@@ -4,6 +4,7 @@ var PocketBank = PocketBank || {};
 PocketBank.auth = (function () {
   var appInitialized = false;
   var loginPending = false;
+  var enterAppPromise = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -17,6 +18,7 @@ PocketBank.auth = (function () {
     document.body.classList.remove('modal-open');
     PocketBank.kidsService.unsubscribeKids();
     PocketBank.transactionsService.unsubscribeTransactions();
+    if (PocketBank.syncService) PocketBank.syncService.reset();
     PocketBank.familyService.clearCurrentFamily();
   }
 
@@ -29,6 +31,8 @@ PocketBank.auth = (function () {
   }
 
   function enterApp() {
+    if (enterAppPromise) return enterAppPromise;
+
     var familyId = PocketBank.familyService.getFamilyId();
     if (!familyId) {
       PocketBank.familySetup.show();
@@ -40,7 +44,7 @@ PocketBank.auth = (function () {
     $('app-shell').classList.remove('hidden');
     document.body.classList.add('app-active');
 
-    return new Promise(function (resolve) {
+    enterAppPromise = new Promise(function (resolve) {
       var kidsReady = false;
       var transactionsReady = false;
       var resolved = false;
@@ -89,7 +93,12 @@ PocketBank.auth = (function () {
         }
         resolve();
       }, 300);
+    }).then(function (result) {
+      enterAppPromise = null;
+      return result;
     });
+
+    return enterAppPromise;
   }
 
   async function handleAuthenticatedUser(user) {
@@ -170,6 +179,7 @@ PocketBank.auth = (function () {
     try {
       PocketBank.kidsService.unsubscribeKids();
       PocketBank.transactionsService.unsubscribeTransactions();
+      if (PocketBank.syncService) PocketBank.syncService.reset();
       PocketBank.familyService.clearCurrentFamily();
       await PocketBank.firebaseService.logout();
     } catch (err) {
@@ -237,6 +247,7 @@ PocketBank.auth = (function () {
           handleAuthenticatedUser(user);
         } else {
           appInitialized = false;
+          enterAppPromise = null;
           showLogin();
         }
       });

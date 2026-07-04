@@ -34,6 +34,21 @@ PocketBank.store = (function () {
     localStorage.setItem(PocketBank.LEGACY_MIGRATED_KEY, new Date().toISOString());
   }
 
+  function clearLocalCache() {
+    localStorage.removeItem(PocketBank.STORAGE_KEY);
+    localStorage.removeItem(PocketBank.LEGACY_MIGRATED_KEY);
+    sessionStorage.removeItem('pocketbank.lastCategory');
+    if ('caches' in window) {
+      return caches.keys().then(function (keys) {
+        return Promise.all(
+          keys.filter(function (k) { return k.indexOf('pocketbank') === 0; })
+            .map(function (k) { return caches.delete(k); })
+        );
+      });
+    }
+    return Promise.resolve();
+  }
+
   function getRawData() {
     return {
       kids: getKids(),
@@ -129,6 +144,17 @@ PocketBank.store = (function () {
       return PocketBank.kidsService.kidNameExists(name, excludeId);
     }
     return false;
+  }
+
+  function deleteKid(id) {
+    if (PocketBank.kidsService && PocketBank.kidsService.isReady()) {
+      return PocketBank.kidsService.deleteKid(id);
+    }
+    return Promise.reject(new Error('Kids sync is not ready. Check your connection.'));
+  }
+
+  function getTransactionCountForKid(kidId) {
+    return getTransactions(kidId).length;
   }
 
   /* --- Transactions (delegated to Firestore transactionsService) --- */
@@ -305,12 +331,15 @@ PocketBank.store = (function () {
     getLegacyLocalData: getLegacyLocalData,
     hasLegacyLocalData: hasLegacyLocalData,
     migrateLegacyToFirestore: migrateLegacyToFirestore,
+    clearLocalCache: clearLocalCache,
     getRawData: getRawData,
     replaceAll: replaceAll,
     clearAll: clearAll,
     getKids: getKids,
     getKid: getKid,
     addKid: addKid,
+    deleteKid: deleteKid,
+    getTransactionCountForKid: getTransactionCountForKid,
     kidNameExists: kidNameExists,
     getTransactions: getTransactions,
     getAllTransactions: getAllTransactions,

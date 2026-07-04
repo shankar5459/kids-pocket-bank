@@ -26,6 +26,17 @@ PocketBank.kidsService = (function () {
     };
   }
 
+  function track(op) {
+    if (PocketBank.syncService) {
+      return PocketBank.syncService.trackWrite(op).catch(function (err) {
+        return Promise.reject(PocketBank.firebaseService.wrapFirestoreError(err));
+      });
+    }
+    return op.catch(function (err) {
+      return Promise.reject(PocketBank.firebaseService.wrapFirestoreError(err));
+    });
+  }
+
   function subscribe(fid, onChange) {
     unsubscribeKids();
     familyId = fid;
@@ -42,10 +53,16 @@ PocketBank.kidsService = (function () {
           return a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0;
         });
         ready = true;
+        if (PocketBank.syncService) {
+          PocketBank.syncService.reportKidsSnapshot(snapshot.metadata);
+        }
         if (onChange) onChange(kids.slice());
       }, function (err) {
         console.error('Kids listener error:', err);
         ready = false;
+        if (PocketBank.syncService) {
+          PocketBank.syncService.reportListenerError('kids', err);
+        }
       });
   }
 
@@ -77,12 +94,12 @@ PocketBank.kidsService = (function () {
       updatedAt: now
     };
 
-    return kidsCollection().doc(kidId).set(kid).then(function () {
+    return track(kidsCollection().doc(kidId).set(kid).then(function () {
       return Object.assign({}, kid, {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
-    });
+    }));
   }
 
   function updateKid(id, fields) {
@@ -93,11 +110,11 @@ PocketBank.kidsService = (function () {
         updates[key] = key === 'name' ? fields[key].trim() : fields[key];
       }
     });
-    return kidsCollection().doc(id).update(updates);
+    return track(kidsCollection().doc(id).update(updates));
   }
 
   function deleteKid(id) {
-    return kidsCollection().doc(id).delete();
+    return track(kidsCollection().doc(id).delete());
   }
 
   function getKids() {
@@ -125,7 +142,7 @@ PocketBank.kidsService = (function () {
       createdAt: kid.createdAt ? isoToTimestamp(kid.createdAt) : now,
       updatedAt: now
     };
-    return kidsCollection().doc(kid.id).set(payload, { merge: true });
+    return track(kidsCollection().doc(kid.id).set(payload, { merge: true }));
   }
 
   function isoToTimestamp(value) {
