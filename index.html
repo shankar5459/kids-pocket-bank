@@ -14,166 +14,203 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div id="app">
-    <header class="app-header">
-      <h1>Pocket Money Bank</h1>
-    </header>
+  <!-- Login screen (Phase 1 — Firebase Email/Password) -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <img src="icons/icon-192.png" alt="" class="auth-logo" width="96" height="96">
+      <h1 class="auth-title">Pocket Money Bank</h1>
+      <p class="auth-subtitle">Sign in to manage pocket money</p>
+      <p class="auth-note">Use the account created by the parent/admin.</p>
 
-    <main class="app-main">
-      <!-- Dashboard -->
-      <section id="view-dashboard" class="view">
-        <div id="empty-state" class="empty-state hidden">
-          <p class="empty-icon">&#128176;</p>
-          <h2>Welcome!</h2>
-          <p>Add your first kid to start tracking pocket money.</p>
-          <button type="button" class="btn btn-primary" data-action="add-kid">+ Add Kid</button>
-        </div>
-        <div id="kid-cards" class="kid-cards"></div>
-        <button type="button" class="btn btn-outline add-kid-btn hidden" id="btn-add-kid-extra" data-action="add-kid">+ Add Kid</button>
-      </section>
+      <form id="login-form" class="auth-form" autocomplete="on">
+        <label class="form-label">Email
+          <input type="email" id="login-email" required autocomplete="username" inputmode="email" placeholder="you@example.com">
+        </label>
+        <label class="form-label">Password
+          <input type="password" id="login-password" required autocomplete="current-password" placeholder="Password">
+        </label>
+        <p id="login-error" class="field-error auth-error hidden" role="alert"></p>
+        <button type="submit" id="login-submit" class="btn btn-primary btn-block">Sign in</button>
+      </form>
+    </div>
+  </div>
 
-      <!-- Statement -->
-      <section id="view-statement" class="view hidden">
-        <div id="statement-header" class="statement-header"></div>
-        <div id="statement-content" class="statement-content"></div>
-      </section>
+  <!-- Main app (shown after login) -->
+  <div id="app-shell" class="hidden">
+    <div id="app">
+      <header class="app-header">
+        <h1>Pocket Money Bank</h1>
+        <p id="header-user-email" class="header-user-email"></p>
+      </header>
 
-      <!-- Settings -->
-      <section id="view-settings" class="view hidden">
-        <h2 class="section-title">Settings & Backup</h2>
+      <main class="app-main">
+        <!-- Dashboard -->
+        <section id="view-dashboard" class="view">
+          <div id="empty-state" class="empty-state hidden">
+            <p class="empty-icon">&#128176;</p>
+            <h2>Welcome!</h2>
+            <p>Add your first kid to start tracking pocket money.</p>
+            <button type="button" class="btn btn-primary" data-action="add-kid">+ Add Kid</button>
+          </div>
+          <div id="kid-cards" class="kid-cards"></div>
+          <button type="button" class="btn btn-outline add-kid-btn hidden" id="btn-add-kid-extra" data-action="add-kid">+ Add Kid</button>
+        </section>
 
-        <div class="notice notice-info">
-          <h3>Your data stays on this device</h3>
-          <ul>
-            <li>All kid profiles and transactions are stored in this browser's local storage.</li>
-            <li>GitHub Pages only delivers the app files. <strong>No data is uploaded to GitHub or any server.</strong></li>
-            <li>Clearing browser data erases your records.</li>
-            <li><strong>Export a JSON backup regularly</strong> to preserve history and move data between devices.</li>
-          </ul>
-        </div>
+        <!-- Statement -->
+        <section id="view-statement" class="view hidden">
+          <div id="statement-header" class="statement-header"></div>
+          <div id="statement-content" class="statement-content"></div>
+        </section>
 
-        <div class="notice notice-tip">
-          <h3>Install on your phone</h3>
-          <p><strong>Android:</strong> Tap "Install app" in the browser menu.</p>
-          <p><strong>iPhone:</strong> Tap Share &rarr; "Add to Home Screen".</p>
-        </div>
+        <!-- Settings -->
+        <section id="view-settings" class="view hidden">
+          <h2 class="section-title">Settings & Backup</h2>
 
-        <p id="settings-data-summary" class="data-summary"></p>
-        <div id="settings-status" class="settings-status hidden"></div>
+          <div class="notice notice-account">
+            <h3>Account</h3>
+            <p>Signed in as <strong id="settings-user-email"></strong></p>
+            <button type="button" class="btn btn-outline btn-block" data-action="logout">Sign out</button>
+          </div>
 
-        <div class="settings-actions">
-          <button type="button" class="btn btn-primary btn-block" data-action="export-backup">Export Backup (JSON)</button>
-          <button type="button" class="btn btn-outline btn-block" id="btn-import">Import Backup (JSON)</button>
-          <input type="file" id="import-file" accept=".json,application/json" class="hidden" aria-hidden="true">
-          <button type="button" class="btn btn-outline btn-block btn-danger-text" data-action="clear-all">Clear All Data</button>
-        </div>
-      </section>
-    </main>
+          <div class="notice notice-info">
+            <h3>Your data stays on this device</h3>
+            <ul>
+              <li>All kid profiles and transactions are stored in this browser's local storage.</li>
+              <li>GitHub Pages only delivers the app files. <strong>No transaction data is uploaded yet.</strong></li>
+              <li>Clearing browser data erases your records.</li>
+              <li><strong>Export a JSON backup regularly</strong> to preserve history and move data between devices.</li>
+            </ul>
+          </div>
 
-    <!-- Bottom nav -->
-    <nav class="bottom-nav" aria-label="Main navigation">
-      <button type="button" class="nav-item active" data-view="dashboard" aria-label="Dashboard">
-        <span class="nav-icon">&#127968;</span>
-        <span class="nav-label">Home</span>
-      </button>
-      <button type="button" class="nav-item nav-add" data-view="add" aria-label="Add transaction">
-        <span class="nav-add-circle">+</span>
-      </button>
-      <button type="button" class="nav-item" data-view="settings" aria-label="Settings">
-        <span class="nav-icon">&#9881;</span>
-        <span class="nav-label">Settings</span>
-      </button>
-    </nav>
+          <div class="notice notice-tip">
+            <h3>Install on your phone</h3>
+            <p><strong>Android:</strong> Tap "Install app" in the browser menu.</p>
+            <p><strong>iPhone:</strong> Tap Share &rarr; "Add to Home Screen".</p>
+          </div>
 
-    <!-- Toast -->
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+          <p id="settings-data-summary" class="data-summary"></p>
+          <div id="settings-status" class="settings-status hidden"></div>
 
-    <!-- Modal overlay -->
-    <div id="modal-overlay" class="modal-overlay hidden">
-      <!-- Add Kid -->
-      <div id="modal-kid" class="modal hidden" role="dialog" aria-labelledby="kid-modal-title">
-        <div class="modal-header">
-          <h2 id="kid-modal-title">Add Kid</h2>
-          <button type="button" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-        <form id="kid-form" class="modal-body">
-          <label class="form-label">Name
-            <input type="text" id="kid-name" required autocomplete="off" placeholder="Kid's name">
-          </label>
-          <p id="kid-name-error" class="field-error"></p>
-          <p class="form-label">Avatar</p>
-          <div id="kid-avatar-picker" class="avatar-picker"></div>
-          <button type="submit" class="btn btn-primary btn-block">Save</button>
-        </form>
-      </div>
+          <div class="settings-actions">
+            <button type="button" class="btn btn-primary btn-block" data-action="export-backup">Export Backup (JSON)</button>
+            <button type="button" class="btn btn-outline btn-block" id="btn-import">Import Backup (JSON)</button>
+            <input type="file" id="import-file" accept=".json,application/json" class="hidden" aria-hidden="true">
+            <button type="button" class="btn btn-outline btn-block btn-danger-text" data-action="clear-all">Clear All Data</button>
+          </div>
+        </section>
+      </main>
 
-      <!-- Add/Edit Transaction -->
-      <div id="modal-txn" class="modal hidden" role="dialog" aria-labelledby="txn-modal-title">
-        <div class="modal-header">
-          <h2 id="txn-modal-title">Add Transaction</h2>
-          <button type="button" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-        <form id="txn-form" class="modal-body" data-mode="add">
-          <input type="hidden" id="txn-type" name="type" value="credit">
-          <input type="hidden" name="category" value="Pocket Money">
+      <!-- Bottom nav -->
+      <nav class="bottom-nav" aria-label="Main navigation">
+        <button type="button" class="nav-item active" data-view="dashboard" aria-label="Dashboard">
+          <span class="nav-icon">&#127968;</span>
+          <span class="nav-label">Home</span>
+        </button>
+        <button type="button" class="nav-item nav-add" data-view="add" aria-label="Add transaction">
+          <span class="nav-add-circle">+</span>
+        </button>
+        <button type="button" class="nav-item" data-view="settings" aria-label="Settings">
+          <span class="nav-icon">&#9881;</span>
+          <span class="nav-label">Settings</span>
+        </button>
+      </nav>
 
-          <div id="txn-kid-select-wrap">
-            <label class="form-label">Kid
-              <select id="txn-kid" required></select>
+      <!-- Toast -->
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+      <!-- Modal overlay -->
+      <div id="modal-overlay" class="modal-overlay hidden">
+        <!-- Add Kid -->
+        <div id="modal-kid" class="modal hidden" role="dialog" aria-labelledby="kid-modal-title">
+          <div class="modal-header">
+            <h2 id="kid-modal-title">Add Kid</h2>
+            <button type="button" class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <form id="kid-form" class="modal-body">
+            <label class="form-label">Name
+              <input type="text" id="kid-name" required autocomplete="off" placeholder="Kid's name">
             </label>
+            <p id="kid-name-error" class="field-error"></p>
+            <p class="form-label">Avatar</p>
+            <div id="kid-avatar-picker" class="avatar-picker"></div>
+            <button type="submit" class="btn btn-primary btn-block">Save</button>
+          </form>
+        </div>
+
+        <!-- Add/Edit Transaction -->
+        <div id="modal-txn" class="modal hidden" role="dialog" aria-labelledby="txn-modal-title">
+          <div class="modal-header">
+            <h2 id="txn-modal-title">Add Transaction</h2>
+            <button type="button" class="modal-close" aria-label="Close">&times;</button>
           </div>
-          <div id="txn-kid-readonly-wrap" class="hidden">
-            <p class="form-label">Kid</p>
-            <p id="txn-kid-readonly" class="kid-readonly"></p>
-          </div>
+          <form id="txn-form" class="modal-body" data-mode="add">
+            <input type="hidden" id="txn-type" name="type" value="credit">
+            <input type="hidden" name="category" value="Pocket Money">
 
-          <p class="form-label">Type</p>
-          <div class="type-toggle">
-            <button type="button" class="active" data-type="credit">Credit</button>
-            <button type="button" data-type="debit">Debit</button>
-          </div>
+            <div id="txn-kid-select-wrap">
+              <label class="form-label">Kid
+                <select id="txn-kid" required></select>
+              </label>
+            </div>
+            <div id="txn-kid-readonly-wrap" class="hidden">
+              <p class="form-label">Kid</p>
+              <p id="txn-kid-readonly" class="kid-readonly"></p>
+            </div>
 
-          <label class="form-label">Amount (&#8377;)
-            <input type="text" id="txn-amount" inputmode="decimal" placeholder="0.00" required autocomplete="off">
-          </label>
-          <p id="txn-amount-error" class="field-error"></p>
+            <p class="form-label">Type</p>
+            <div class="type-toggle">
+              <button type="button" class="active" data-type="credit">Credit</button>
+              <button type="button" data-type="debit">Debit</button>
+            </div>
 
-          <label class="form-label">Date
-            <input type="date" id="txn-date" required>
-          </label>
-          <p id="txn-date-error" class="field-error"></p>
+            <label class="form-label">Amount (&#8377;)
+              <input type="text" id="txn-amount" inputmode="decimal" placeholder="0.00" required autocomplete="off">
+            </label>
+            <p id="txn-amount-error" class="field-error"></p>
 
-          <label class="form-label">Description
-            <input type="text" id="txn-description" required autocomplete="off" placeholder="What was this for?">
-          </label>
-          <p id="txn-desc-error" class="field-error"></p>
+            <label class="form-label">Date
+              <input type="date" id="txn-date" required>
+            </label>
+            <p id="txn-date-error" class="field-error"></p>
 
-          <p class="form-label">Category</p>
-          <div id="category-pills" class="category-pills"></div>
+            <label class="form-label">Description
+              <input type="text" id="txn-description" required autocomplete="off" placeholder="What was this for?">
+            </label>
+            <p id="txn-desc-error" class="field-error"></p>
 
-          <button type="submit" class="btn btn-primary btn-block btn-sticky">Save</button>
-        </form>
-      </div>
+            <p class="form-label">Category</p>
+            <div id="category-pills" class="category-pills"></div>
 
-      <!-- Confirm dialog -->
-      <div id="modal-confirm" class="modal modal-sm hidden" role="alertdialog">
-        <div class="modal-body confirm-body">
-          <div id="confirm-message"></div>
-          <div class="confirm-actions">
-            <button type="button" id="confirm-cancel" class="btn btn-outline">Cancel</button>
-            <button type="button" id="confirm-ok" class="btn btn-primary">Confirm</button>
+            <button type="submit" class="btn btn-primary btn-block btn-sticky">Save</button>
+          </form>
+        </div>
+
+        <!-- Confirm dialog -->
+        <div id="modal-confirm" class="modal modal-sm hidden" role="alertdialog">
+          <div class="modal-body confirm-body">
+            <div id="confirm-message"></div>
+            <div class="confirm-actions">
+              <button type="button" id="confirm-cancel" class="btn btn-outline">Cancel</button>
+              <button type="button" id="confirm-ok" class="btn btn-primary">Confirm</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Firebase SDK (compat — works with plain script tags) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-service.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/store.js"></script>
   <script src="js/backup.js"></script>
   <script src="js/export.js"></script>
   <script src="js/views.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/sw-register.js"></script>
 </body>
 </html>

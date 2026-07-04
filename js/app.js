@@ -340,7 +340,3 @@ PocketBank.app = (function () {
 
   return { init: init };
 })();
-
-document.addEventListener('DOMContentLoaded', function () {
-  PocketBank.app.init();
-});

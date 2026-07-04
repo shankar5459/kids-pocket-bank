@@ -125,6 +125,18 @@ Exported files are named `pocketbank-backup-YYYY-MM-DD.json`:
 
 Import replaces all local data after validation and confirmation.
 
+## Firebase (Phase 1 — login only)
+
+Email/password sign-in is required before using the app. Kids and transactions still use **localStorage** only (no Firestore sync yet).
+
+1. Edit [`js/firebase-config.js`](js/firebase-config.js) with your Firebase Web App config.
+2. In Firebase Console → **Authentication** → create user accounts manually (no in-app sign-up).
+3. In Firebase Console → **Authentication** → **Settings** → **Authorized domains**, add:
+   - `localhost` (local testing)
+   - `shankar5459.github.io` (or your GitHub Pages domain)
+
+Firebase SDK loads from Google CDN; login requires network access.
+
 ## License
 
 Personal / family use. Free and open source.

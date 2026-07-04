@@ -1,9 +1,12 @@
-const CACHE_NAME = 'pocketbank-v2';
+const CACHE_NAME = 'pocketbank-v3';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './css/styles.css',
+  './js/firebase-config.js',
+  './js/firebase-service.js',
+  './js/auth.js',
   './js/utils.js',
   './js/store.js',
   './js/backup.js',
@@ -12,7 +15,8 @@ const ASSETS = [
   './js/app.js',
   './js/sw-register.js',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/favicon-32.png'
 ];
 
 self.addEventListener('install', function (event) {
