@@ -195,6 +195,14 @@ PocketBank.auth = (function () {
       form.addEventListener('submit', handleLoginSubmit);
     }
 
+    var showPassword = $('login-show-password');
+    var passwordInput = $('login-password');
+    if (showPassword && passwordInput) {
+      showPassword.addEventListener('change', function () {
+        passwordInput.type = showPassword.checked ? 'text' : 'password';
+      });
+    }
+
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-action="logout"]');
       if (btn) {

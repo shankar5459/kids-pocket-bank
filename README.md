@@ -1,8 +1,8 @@
-# Pocket Money Bank
+# Piggy Pal
 
-A free, mobile-first PWA for tracking kids' pocket money — earnings, spending, and balances. No backend, no accounts, no subscriptions. All data stays in your browser.
+A free, mobile-first PWA for tracking kids' pocket money — earnings, spending, and balances. Family sync via Firebase Firestore.
 
-**Live demo:** deploy to GitHub Pages (see below) at `https://<username>.github.io/kids-pocket-bank/`
+**Live demo:** `https://shankar5459.github.io/kids-pocket-bank/`
 
 ## Features
 
@@ -19,7 +19,11 @@ A free, mobile-first PWA for tracking kids' pocket money — earnings, spending,
 
 ## Categories
 
-Pocket Money · Gift · Reward · Food · Toys · Books · Savings · Other
+Pocket Money · Allowance · Gift · Reward · Food · Toys · Books · Savings · Other
+
+Selecting **Other** lets you enter a custom category name (stored in the same `category` field).
+
+Legacy backups using `pocketbank-backup` format still import correctly.
 
 ## Tech stack
 
@@ -109,11 +113,11 @@ icons/                  # PWA icons (192, 512)
 
 ## Backup format
 
-Exported files are named `pocketbank-backup-YYYY-MM-DD.json`:
+Exported files are named `piggy-pal-backup-YYYY-MM-DD.json`:
 
 ```json
 {
-  "format": "pocketbank-backup",
+  "format": "piggy-pal-backup",
   "version": 1,
   "exportedAt": "2026-07-04T10:30:00.000Z",
   "data": {

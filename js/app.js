@@ -47,7 +47,8 @@ PocketBank.app = (function () {
     var amountStr = document.getElementById('txn-amount').value;
     var date = document.getElementById('txn-date').value;
     var description = document.getElementById('txn-description').value.trim();
-    var category = document.querySelector('#txn-form [name=category]').value;
+    var presetCategory = document.querySelector('#txn-form [name=category]').value;
+    var category = '';
     var valid = true;
 
     var amountPaise = PocketBank.parseAmountToPaise(amountStr);
@@ -63,8 +64,16 @@ PocketBank.app = (function () {
       document.getElementById('txn-desc-error').textContent = 'Description is required';
       valid = false;
     }
-    if (!category || PocketBank.CATEGORIES.indexOf(category) === -1) {
+    if (presetCategory === PocketBank.CATEGORY_OTHER) {
+      category = (document.getElementById('txn-custom-category').value || '').trim();
+      if (!category) {
+        document.getElementById('txn-custom-category-error').textContent = 'Enter a category name';
+        valid = false;
+      }
+    } else if (!presetCategory || PocketBank.CATEGORIES.indexOf(presetCategory) === -1) {
       valid = false;
+    } else {
+      category = presetCategory;
     }
 
     if (!valid) return null;
@@ -440,6 +449,7 @@ PocketBank.app = (function () {
         var pill = e.target.closest('.pill');
         document.querySelector('#txn-form [name=category]').value = pill.dataset.category;
         PocketBank.views.renderCategoryPills(pill.dataset.category);
+        PocketBank.views.updateCustomCategoryField(pill.dataset.category);
       }
       if (e.target.closest('.avatar-opt')) {
         document.querySelectorAll('.avatar-opt').forEach(function (a) { a.classList.remove('selected'); });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pocketbank-v6';
+const CACHE_NAME = 'pocketbank-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -21,5 +21,7 @@ const ASSETS = [
   './js/sw-register.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/favicon-32.png'
+  './icons/favicon-32.png',
+  './icons/avatar-girl-short.png',
+  './icons/avatar-girl-ponytail.png'
 ];

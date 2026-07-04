@@ -3,6 +3,7 @@ var PocketBank = PocketBank || {};
 
 PocketBank.CATEGORIES = [
   'Pocket Money',
+  'Allowance',
   'Gift',
   'Reward',
   'Food',
@@ -12,8 +13,48 @@ PocketBank.CATEGORIES = [
   'Other'
 ];
 
+PocketBank.CATEGORY_OTHER = 'Other';
+
+PocketBank.isPresetCategory = function (cat) {
+  return PocketBank.CATEGORIES.indexOf(cat) !== -1;
+};
+
+PocketBank.getFilterCategories = function (kidId) {
+  var ordered = PocketBank.CATEGORIES.slice();
+  var seen = {};
+  ordered.forEach(function (c) { seen[c] = true; });
+  if (kidId && PocketBank.store) {
+    PocketBank.store.getTransactions(kidId).forEach(function (t) {
+      if (t.category && !seen[t.category]) {
+        seen[t.category] = true;
+        ordered.push(t.category);
+      }
+    });
+  }
+  return ordered;
+};
+
 PocketBank.KID_COLORS = ['#1E3A5F', '#059669', '#7C3AED', '#DC2626', '#D97706', '#0891B2'];
-PocketBank.KID_AVATARS = ['👦', '👧', '🧒', '👶', '🧑', '👤'];
+PocketBank.KID_AVATARS = [
+  'icons/avatar-girl-short.png',
+  'icons/avatar-girl-ponytail.png',
+  '🧒',
+  '👶',
+  '🧑',
+  '👤'
+];
+
+PocketBank.isAvatarImage = function (avatar) {
+  return avatar && /\.(png|jpg|jpeg|webp|gif|svg)$/i.test(avatar);
+};
+
+PocketBank.renderAvatarHtml = function (avatar, className) {
+  className = className || 'kid-avatar';
+  if (PocketBank.isAvatarImage(avatar)) {
+    return '<img src="' + PocketBank.escapeHtml(avatar) + '" alt="" class="' + className + ' kid-avatar-img">';
+  }
+  return '<span class="' + className + '">' + (avatar || PocketBank.KID_AVATARS[0]) + '</span>';
+};
 
 PocketBank.generateId = function () {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
