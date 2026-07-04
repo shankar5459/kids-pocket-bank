@@ -46,10 +46,31 @@ Open [http://localhost:8765](http://localhost:8765)
 
 ## Deploy to GitHub Pages
 
+This app is plain static HTML — no build step. Use **one** of these methods (not both).
+
+### Option A — Deploy from branch (simplest)
+
 1. Push this repo to GitHub (public repo for free Pages).
 2. Go to **Settings → Pages**.
-3. Source: **Deploy from branch** → `main` → `/ (root)`.
-4. Your app will be at `https://<username>.github.io/kids-pocket-bank/`.
+3. **Build and deployment → Source:** `Deploy from a branch`
+4. **Branch:** `main` → folder **`/ (root)`** → Save
+5. Wait 1–2 minutes. Site: `https://shankar5459.github.io/kids-pocket-bank/`
+
+No GitHub Actions workflow is required for this option.
+
+### Option B — GitHub Actions (workflow included)
+
+If Pages source is set to **GitHub Actions**, use the workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
+
+1. **Settings → Pages → Build and deployment → Source:** `GitHub Actions`
+2. **Settings → Actions → General → Workflow permissions:** choose **Read and write permissions** → Save
+3. Push to `main` (or re-run the failed workflow from the **Actions** tab)
+
+If deploy fails with *"Deployment failed, try again later"*:
+
+- Confirm **Source** is `GitHub Actions` (not branch + Actions at the same time)
+- Re-run the workflow after 5–10 minutes (can be a transient GitHub Pages error)
+- Or switch to **Option A** above — recommended for this project
 
 All asset paths are relative, so the app works under any GitHub Pages subpath.
 
