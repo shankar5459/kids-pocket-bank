@@ -125,6 +125,43 @@ Exported files are named `pocketbank-backup-YYYY-MM-DD.json`:
 
 Import replaces all local data after validation and confirmation.
 
+## Firebase (Phase 1 — login only)
+
+Email/password sign-in is required before using the app. Kids and transactions still use **localStorage** only (no Firestore sync yet).
+
+1. Edit [`js/firebase-config.js`](js/firebase-config.js) with your Firebase Web App config.
+2. In Firebase Console → **Authentication** → create user accounts manually (no in-app sign-up).
+3. In Firebase Console → **Authentication** → **Settings** → **Authorized domains**, add:
+   - `localhost` (local testing)
+   - `shankar5459.github.io` (or your GitHub Pages domain)
+
+Firebase SDK loads from Google CDN; login requires network access.
+
+## Firebase Phase 2 — Family & Kid sync
+
+Kid profiles are synced via **Firestore** for your family. Transactions remain in **localStorage** on each device.
+
+### First-time setup
+
+1. Sign in → **Create Family** (enter a name) → copy the **invite code**
+2. Share the invite code with your spouse
+3. Spouse signs in → **Join Family** → enters the code
+
+### Firestore rules
+
+Paste the contents of [`firestore.rules`](firestore.rules) into **Firebase Console → Firestore → Rules → Publish**.
+
+Also create the Firestore composite index if prompted (usually not needed for kids listener).
+
+### Data split (Phase 2)
+
+| Data | Storage |
+|------|---------|
+| Kid profiles | Firestore (`families/{id}/kids`) |
+| Transactions | localStorage (this device) |
+| Family membership | Firestore (`families/{id}`) |
+| Invite lookup | Firestore (`inviteCodes/{code}`) |
+
 ## License
 
 Personal / family use. Free and open source.

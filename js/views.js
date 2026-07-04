@@ -108,6 +108,7 @@ PocketBank.views = (function () {
           '<div class="kid-actions">' +
             '<button type="button" class="btn btn-outline btn-block" data-action="statement" data-kid-id="' + kid.id + '">Statement</button>' +
             '<button type="button" class="btn btn-primary btn-block" data-action="add-txn" data-kid-id="' + kid.id + '">+ Transaction</button>' +
+            '<button type="button" class="btn btn-outline btn-sm btn-danger-text kid-delete-btn" data-action="delete-kid" data-kid-id="' + kid.id + '">Delete kid</button>' +
           '</div>' +
         '</div>'
       );
@@ -181,10 +182,13 @@ PocketBank.views = (function () {
   }
 
   function renderStatementRow(r) {
+    var audit = PocketBank.formatAuditMeta(r);
     return (
       '<tr>' +
         '<td>' + PocketBank.formatDate(r.date) + '</td>' +
-        '<td>' + PocketBank.escapeHtml(r.description) + '</td>' +
+        '<td>' + PocketBank.escapeHtml(r.description) +
+          (audit ? '<br><span class="audit-meta">' + PocketBank.escapeHtml(audit) + '</span>' : '') +
+        '</td>' +
         '<td><span class="badge">' + PocketBank.escapeHtml(r.category) + '</span></td>' +
         '<td class="credit">' + (r.type === 'credit' ? PocketBank.formatMoney(r.amountPaise) : '') + '</td>' +
         '<td class="debit">' + (r.type === 'debit' ? PocketBank.formatMoney(r.amountPaise) : '') + '</td>' +
@@ -200,6 +204,7 @@ PocketBank.views = (function () {
   function renderStatementCard(r) {
     var amtClass = r.type === 'credit' ? 'credit' : 'debit';
     var sign = r.type === 'credit' ? '+' : '−';
+    var audit = PocketBank.formatAuditMeta(r);
     return (
       '<div class="stmt-card">' +
         '<div class="stmt-card-top">' +
@@ -207,6 +212,7 @@ PocketBank.views = (function () {
           '<span class="badge">' + PocketBank.escapeHtml(r.category) + '</span>' +
         '</div>' +
         '<p class="stmt-desc">' + PocketBank.escapeHtml(r.description) + '</p>' +
+        (audit ? '<p class="audit-meta">' + PocketBank.escapeHtml(audit) + '</p>' : '') +
         '<div class="stmt-card-bottom">' +
           '<span class="stmt-amt ' + amtClass + '">' + sign + ' ' + PocketBank.formatMoney(r.amountPaise) + '</span>' +
           '<span class="stmt-bal">Balance: ' + PocketBank.formatMoney(r.runningBalance) + '</span>' +
@@ -235,6 +241,36 @@ PocketBank.views = (function () {
     var txnCount = data.transactions.length;
     document.getElementById('settings-data-summary').textContent =
       'Current data: ' + kidCount + ' kid' + (kidCount !== 1 ? 's' : '') + ', ' + txnCount + ' transaction' + (txnCount !== 1 ? 's' : '');
+
+    var family = PocketBank.familyService && PocketBank.familyService.getCurrentFamily();
+    var familyId = PocketBank.familyService && PocketBank.familyService.getFamilyId();
+    var familyNameEl = document.getElementById('settings-family-name');
+    var familyIdEl = document.getElementById('settings-family-id');
+    var inviteCodeEl = document.getElementById('settings-invite-code');
+    if (familyNameEl) familyNameEl.textContent = family ? family.name : '—';
+    if (familyIdEl) familyIdEl.textContent = familyId || '—';
+    if (inviteCodeEl) inviteCodeEl.textContent = family ? family.inviteCode : '—';
+
+    var user = PocketBank.firebaseService && PocketBank.firebaseService.getCurrentUser();
+    var userIdEl = document.getElementById('settings-user-id');
+    if (userIdEl) userIdEl.textContent = user ? user.uid : '—';
+
+    if (PocketBank.syncService) {
+      var syncEl = document.getElementById('settings-sync-status');
+      if (syncEl) {
+        var status = PocketBank.syncService.computeStatus();
+        syncEl.textContent = PocketBank.syncService.getStatusMessage(status);
+      }
+    }
+
+    var migrationEl = document.getElementById('legacy-migration-notice');
+    if (migrationEl) {
+      if (PocketBank.store.hasLegacyLocalData()) {
+        migrationEl.classList.remove('hidden');
+      } else {
+        migrationEl.classList.add('hidden');
+      }
+    }
   }
 
   function showSettingsStatus(message, type) {
@@ -277,7 +313,15 @@ PocketBank.views = (function () {
       document.getElementById('txn-kid-readonly').textContent = kid ? kid.avatar + ' ' + kid.name : '—';
       form.dataset.kidId = txn ? txn.kidId : '';
       fillTxnForm(txn);
+      var auditEl = document.getElementById('txn-audit-meta');
+      if (auditEl) {
+        var auditText = PocketBank.formatAuditMeta(txn);
+        auditEl.textContent = auditText;
+        auditEl.classList.toggle('hidden', !auditText);
+      }
     } else {
+      var auditElAdd = document.getElementById('txn-audit-meta');
+      if (auditElAdd) auditElAdd.classList.add('hidden');
       kidSelectWrap.classList.remove('hidden');
       kidReadonlyWrap.classList.add('hidden');
       var kids = PocketBank.store.getKids();
