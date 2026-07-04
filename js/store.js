@@ -1,144 +1,191 @@
-/* Pocket Money Bank — data store */
+/* Pocket Money Bank — data store (transactions & kids via Firestore) */
 var PocketBank = PocketBank || {};
 
 PocketBank.STORAGE_KEY = 'pocketbank.v1';
+PocketBank.LEGACY_MIGRATED_KEY = 'pocketbank.legacyMigrated';
 
 PocketBank.store = (function () {
-  var data = { kids: [], transactions: [] };
-
-  function load() {
+  function readLegacyPayload() {
     try {
       var raw = localStorage.getItem(PocketBank.STORAGE_KEY);
-      if (raw) {
-        var parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.kids) && Array.isArray(parsed.transactions)) {
-          data = parsed;
-          return;
-        }
-      }
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      var kids = Array.isArray(parsed.kids) ? parsed.kids : [];
+      var transactions = Array.isArray(parsed.transactions) ? parsed.transactions : [];
+      if (!kids.length && !transactions.length) return null;
+      return { kids: kids, transactions: transactions };
     } catch (e) {
-      console.warn('Failed to load data, starting fresh', e);
+      console.warn('Failed to read legacy local data', e);
+      return null;
     }
-    data = { kids: [], transactions: [] };
   }
 
-  function save() {
-    localStorage.setItem(PocketBank.STORAGE_KEY, JSON.stringify(data));
+  function getLegacyLocalData() {
+    return readLegacyPayload();
+  }
+
+  function hasLegacyLocalData() {
+    if (localStorage.getItem(PocketBank.LEGACY_MIGRATED_KEY)) return false;
+    return readLegacyPayload() !== null;
+  }
+
+  function markLegacyMigrated() {
+    localStorage.setItem(PocketBank.LEGACY_MIGRATED_KEY, new Date().toISOString());
   }
 
   function getRawData() {
-    return { kids: data.kids.slice(), transactions: data.transactions.slice() };
+    return {
+      kids: getKids(),
+      transactions: getAllTransactions()
+    };
   }
 
   function replaceAll(newData) {
-    data = {
-      kids: newData.kids.slice(),
-      transactions: newData.transactions.slice()
-    };
-    save();
+    if (!PocketBank.transactionsService || !PocketBank.transactionsService.isReady()) {
+      return Promise.reject(new Error('Transaction sync is not ready. Check your connection.'));
+    }
+    var kids = (newData.kids || []).slice();
+    var txns = (newData.transactions || []).slice();
+    var kidImports = kids.map(function (kid) {
+      if (PocketBank.kidsService && PocketBank.kidsService.isReady()) {
+        return PocketBank.kidsService.importKid(kid);
+      }
+      return Promise.resolve();
+    });
+    return Promise.all(kidImports).then(function () {
+      return PocketBank.transactionsService.replaceAll(txns);
+    });
   }
 
   function clearAll() {
-    data = { kids: [], transactions: [] };
-    save();
+    if (!PocketBank.transactionsService || !PocketBank.transactionsService.isReady()) {
+      return Promise.reject(new Error('Transaction sync is not ready. Check your connection.'));
+    }
+    return PocketBank.transactionsService.deleteAllTransactions();
   }
 
-  /* --- Kids --- */
+  function migrateLegacyToFirestore() {
+    var legacy = readLegacyPayload();
+    if (!legacy) return Promise.reject(new Error('No local data found to migrate.'));
+
+    if (!PocketBank.kidsService || !PocketBank.kidsService.isReady()) {
+      return Promise.reject(new Error('Kids sync is not ready. Check your connection.'));
+    }
+    if (!PocketBank.transactionsService || !PocketBank.transactionsService.isReady()) {
+      return Promise.reject(new Error('Transaction sync is not ready. Check your connection.'));
+    }
+
+    var kidIds = {};
+    PocketBank.kidsService.getKids().forEach(function (k) { kidIds[k.id] = true; });
+
+    var kidImports = legacy.kids.map(function (kid) {
+      return PocketBank.kidsService.importKid(kid).then(function () {
+        kidIds[kid.id] = true;
+      });
+    });
+
+    return Promise.all(kidImports).then(function () {
+      var txns = legacy.transactions.filter(function (t) {
+        return kidIds[t.kidId];
+      });
+      var skipped = legacy.transactions.length - txns.length;
+      return PocketBank.transactionsService.importTransactions(txns).then(function () {
+        markLegacyMigrated();
+        return {
+          kidsImported: legacy.kids.length,
+          transactionsImported: txns.length,
+          transactionsSkipped: skipped
+        };
+      });
+    });
+  }
+
+  /* --- Kids (delegated to Firestore kidsService) --- */
 
   function getKids() {
-    return data.kids.slice();
+    if (PocketBank.kidsService && PocketBank.kidsService.isReady()) {
+      return PocketBank.kidsService.getKids();
+    }
+    return [];
   }
 
   function getKid(id) {
-    return data.kids.find(function (k) { return k.id === id; }) || null;
+    if (PocketBank.kidsService && PocketBank.kidsService.isReady()) {
+      return PocketBank.kidsService.getKid(id);
+    }
+    return null;
   }
 
   function addKid(name, avatar, color) {
-    var kid = {
-      id: PocketBank.generateId(),
-      name: name.trim(),
-      avatar: avatar || PocketBank.KID_AVATARS[0],
-      color: color || PocketBank.KID_COLORS[data.kids.length % PocketBank.KID_COLORS.length],
-      createdAt: new Date().toISOString()
-    };
-    data.kids.push(kid);
-    save();
-    return kid;
+    if (PocketBank.kidsService && PocketBank.kidsService.isReady()) {
+      return PocketBank.kidsService.addKid(name, avatar, color);
+    }
+    return Promise.reject(new Error('Kids sync is not ready. Check your connection.'));
   }
 
   function kidNameExists(name, excludeId) {
-    var lower = name.trim().toLowerCase();
-    return data.kids.some(function (k) {
-      return k.name.toLowerCase() === lower && k.id !== excludeId;
-    });
+    if (PocketBank.kidsService && PocketBank.kidsService.isReady()) {
+      return PocketBank.kidsService.kidNameExists(name, excludeId);
+    }
+    return false;
   }
 
-  /* --- Transactions --- */
+  /* --- Transactions (delegated to Firestore transactionsService) --- */
+
+  function ensureTransactionsReady() {
+    if (!PocketBank.transactionsService || !PocketBank.transactionsService.isReady()) {
+      throw new Error('Transaction sync is not ready. Check your connection.');
+    }
+  }
 
   function getTransactions(kidId) {
-    return data.transactions
-      .filter(function (t) { return t.kidId === kidId; })
-      .slice();
+    if (PocketBank.transactionsService && PocketBank.transactionsService.isReady()) {
+      return PocketBank.transactionsService.getTransactions(kidId);
+    }
+    return [];
   }
 
   function getAllTransactions() {
-    return data.transactions.slice();
+    if (PocketBank.transactionsService && PocketBank.transactionsService.isReady()) {
+      return PocketBank.transactionsService.getAllTransactions();
+    }
+    return [];
   }
 
   function getTransaction(id) {
-    return data.transactions.find(function (t) { return t.id === id; }) || null;
+    if (PocketBank.transactionsService && PocketBank.transactionsService.isReady()) {
+      return PocketBank.transactionsService.getTransaction(id);
+    }
+    return null;
   }
 
   function addTransaction(kidId, type, amountPaise, date, description, category) {
-    var txn = {
-      id: PocketBank.generateId(),
-      kidId: kidId,
-      type: type,
-      amountPaise: amountPaise,
-      date: date,
-      description: description.trim(),
-      category: category,
-      createdAt: new Date().toISOString()
-    };
-    data.transactions.push(txn);
-    save();
-    return txn;
+    ensureTransactionsReady();
+    return PocketBank.transactionsService.addTransaction(kidId, type, amountPaise, date, description, category);
   }
 
   function updateTransaction(id, fields) {
-    var idx = data.transactions.findIndex(function (t) { return t.id === id; });
-    if (idx === -1) return null;
-    var allowed = ['type', 'amountPaise', 'date', 'description', 'category'];
-    allowed.forEach(function (key) {
-      if (fields[key] !== undefined) {
-        data.transactions[idx][key] = key === 'description' ? fields[key].trim() : fields[key];
-      }
-    });
-    save();
-    return data.transactions[idx];
+    ensureTransactionsReady();
+    return PocketBank.transactionsService.updateTransaction(id, fields);
   }
 
   function deleteTransaction(id) {
-    var idx = data.transactions.findIndex(function (t) { return t.id === id; });
-    if (idx === -1) return false;
-    data.transactions.splice(idx, 1);
-    save();
-    return true;
+    ensureTransactionsReady();
+    return PocketBank.transactionsService.deleteTransaction(id);
   }
 
   /* --- Derived balances & stats --- */
 
   function getBalance(kidId) {
-    return data.transactions
-      .filter(function (t) { return t.kidId === kidId; })
-      .reduce(function (sum, t) {
-        return sum + (t.type === 'credit' ? t.amountPaise : -t.amountPaise);
-      }, 0);
+    return getTransactions(kidId).reduce(function (sum, t) {
+      return sum + (t.type === 'credit' ? t.amountPaise : -t.amountPaise);
+    }, 0);
   }
 
   function getBalanceExcluding(kidId, excludeTxnId) {
-    return data.transactions
-      .filter(function (t) { return t.kidId === kidId && t.id !== excludeTxnId; })
+    return getTransactions(kidId)
+      .filter(function (t) { return t.id !== excludeTxnId; })
       .reduce(function (sum, t) {
         return sum + (t.type === 'credit' ? t.amountPaise : -t.amountPaise);
       }, 0);
@@ -254,11 +301,10 @@ PocketBank.store = (function () {
     };
   }
 
-  load();
-
   return {
-    load: load,
-    save: save,
+    getLegacyLocalData: getLegacyLocalData,
+    hasLegacyLocalData: hasLegacyLocalData,
+    migrateLegacyToFirestore: migrateLegacyToFirestore,
     getRawData: getRawData,
     replaceAll: replaceAll,
     clearAll: clearAll,

@@ -1,8 +1,9 @@
-/* Pocket Money Bank — Firebase initialization & auth (Phase 1) */
+/* Pocket Money Bank — Firebase initialization & auth */
 var PocketBank = PocketBank || {};
 
 PocketBank.firebaseService = (function () {
   var auth = null;
+  var db = null;
   var initialized = false;
 
   function isConfigReady() {
@@ -21,9 +22,14 @@ PocketBank.firebaseService = (function () {
     }
     firebase.initializeApp(PocketBank.firebaseConfig);
     auth = firebase.auth();
-    // Default persistence (LOCAL) keeps session across browser restarts.
+    db = firebase.firestore();
     initialized = true;
     return auth;
+  }
+
+  function getFirestore() {
+    if (!db) init();
+    return db;
   }
 
   function onAuthStateChanged(callback) {
@@ -67,6 +73,7 @@ PocketBank.firebaseService = (function () {
   return {
     init: init,
     isConfigReady: isConfigReady,
+    getFirestore: getFirestore,
     onAuthStateChanged: onAuthStateChanged,
     login: login,
     logout: logout,

@@ -235,6 +235,21 @@ PocketBank.views = (function () {
     var txnCount = data.transactions.length;
     document.getElementById('settings-data-summary').textContent =
       'Current data: ' + kidCount + ' kid' + (kidCount !== 1 ? 's' : '') + ', ' + txnCount + ' transaction' + (txnCount !== 1 ? 's' : '');
+
+    var family = PocketBank.familyService && PocketBank.familyService.getCurrentFamily();
+    var familyNameEl = document.getElementById('settings-family-name');
+    var inviteCodeEl = document.getElementById('settings-invite-code');
+    if (familyNameEl) familyNameEl.textContent = family ? family.name : '—';
+    if (inviteCodeEl) inviteCodeEl.textContent = family ? family.inviteCode : '—';
+
+    var migrationEl = document.getElementById('legacy-migration-notice');
+    if (migrationEl) {
+      if (PocketBank.store.hasLegacyLocalData()) {
+        migrationEl.classList.remove('hidden');
+      } else {
+        migrationEl.classList.add('hidden');
+      }
+    }
   }
 
   function showSettingsStatus(message, type) {

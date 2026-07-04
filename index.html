@@ -35,7 +35,55 @@
     </div>
   </div>
 
-  <!-- Main app (shown after login) -->
+  <!-- Family setup (Phase 2 — after login, before app) -->
+  <div id="family-setup-screen" class="auth-screen hidden">
+    <div class="auth-card family-setup-card">
+      <img src="icons/icon-192.png" alt="" class="auth-logo" width="96" height="96">
+      <h1 class="auth-title">Set Up Your Family</h1>
+      <p class="auth-subtitle">Create a new family or join an existing one</p>
+
+      <div class="family-tabs">
+        <button type="button" class="family-tab active" data-panel="create">Create Family</button>
+        <button type="button" class="family-tab" data-panel="join">Join Family</button>
+      </div>
+
+      <p id="family-setup-error" class="field-error auth-error hidden" role="alert"></p>
+
+      <!-- Create panel -->
+      <div id="family-panel-create">
+        <form id="family-create-form" class="auth-form">
+          <label class="form-label">Family name
+            <input type="text" id="family-create-name" required autocomplete="off" placeholder="e.g. Sharma Family">
+          </label>
+          <button type="submit" class="btn btn-primary btn-block">Create Family</button>
+        </form>
+      </div>
+
+      <!-- Join panel -->
+      <div id="family-panel-join" class="hidden">
+        <form id="family-join-form" class="auth-form">
+          <label class="form-label">Invite code
+            <input type="text" id="family-join-code" required autocomplete="off" placeholder="e.g. ABC123" style="text-transform:uppercase">
+          </label>
+          <p class="auth-note">Ask the family creator for the 6-character invite code.</p>
+          <button type="submit" class="btn btn-primary btn-block">Join Family</button>
+        </form>
+      </div>
+
+      <!-- Success panel (after create) -->
+      <div id="family-panel-success" class="hidden">
+        <p class="family-success-msg">Family <strong id="family-success-name"></strong> created!</p>
+        <p class="auth-note">Share this invite code so others can join:</p>
+        <div class="invite-code-display">
+          <span id="family-success-code" class="invite-code"></span>
+          <button type="button" id="family-copy-code" class="btn btn-outline btn-sm">Copy</button>
+        </div>
+        <button type="button" id="family-continue-btn" class="btn btn-primary btn-block">Continue to App</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main app (shown after login + family setup) -->
   <div id="app-shell" class="hidden">
     <div id="app">
       <header class="app-header">
@@ -72,14 +120,28 @@
             <button type="button" class="btn btn-outline btn-block" data-action="logout">Sign out</button>
           </div>
 
+          <div class="notice notice-family">
+            <h3>Family</h3>
+            <p>Family: <strong id="settings-family-name">—</strong></p>
+            <p>Invite code: <strong id="settings-invite-code" class="invite-code">—</strong>
+              <button type="button" class="btn btn-outline btn-sm" data-action="copy-invite">Copy</button>
+            </p>
+            <p class="form-hint">Share the invite code so your spouse can join the same family.</p>
+          </div>
+
           <div class="notice notice-info">
-            <h3>Your data stays on this device</h3>
+            <h3>Your data is synced to the cloud</h3>
             <ul>
-              <li>All kid profiles and transactions are stored in this browser's local storage.</li>
-              <li>GitHub Pages only delivers the app files. <strong>No transaction data is uploaded yet.</strong></li>
-              <li>Clearing browser data erases your records.</li>
-              <li><strong>Export a JSON backup regularly</strong> to preserve history and move data between devices.</li>
+              <li>Kid profiles and transactions sync in real time for your family.</li>
+              <li>GitHub Pages only delivers the app files — your data lives in Firebase Firestore.</li>
+              <li>Export a JSON backup regularly for an offline copy.</li>
             </ul>
+          </div>
+
+          <div id="legacy-migration-notice" class="notice notice-tip hidden">
+            <h3>Local data found</h3>
+            <p>This browser has older local-only data that has not been migrated yet.</p>
+            <button type="button" class="btn btn-primary btn-block" data-action="migrate-legacy">Migrate Local Data to Cloud</button>
           </div>
 
           <div class="notice notice-tip">
@@ -114,9 +176,6 @@
           <span class="nav-label">Settings</span>
         </button>
       </nav>
-
-      <!-- Toast -->
-      <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
       <!-- Modal overlay -->
       <div id="modal-overlay" class="modal-overlay hidden">
@@ -199,17 +258,25 @@
     </div>
   </div>
 
+  <!-- Toast (global — works on login, family setup, and app) -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <!-- Firebase SDK (compat — works with plain script tags) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/firebase-service.js"></script>
+  <script src="js/family-service.js"></script>
+  <script src="js/kids-service.js"></script>
+  <script src="js/transactions-service.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/store.js"></script>
   <script src="js/backup.js"></script>
   <script src="js/export.js"></script>
   <script src="js/views.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/family-setup.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/sw-register.js"></script>
 </body>

@@ -1,4 +1,4 @@
-/* Pocket Money Bank — login screen & auth gate (Phase 1) */
+/* Pocket Money Bank — login, family gate & auth flow */
 var PocketBank = PocketBank || {};
 
 PocketBank.auth = (function () {
@@ -11,18 +11,13 @@ PocketBank.auth = (function () {
 
   function showLogin() {
     $('auth-screen').classList.remove('hidden');
+    $('family-setup-screen').classList.add('hidden');
     $('app-shell').classList.add('hidden');
+    document.body.classList.remove('app-active');
     document.body.classList.remove('modal-open');
-  }
-
-  function showApp(user) {
-    $('auth-screen').classList.add('hidden');
-    $('app-shell').classList.remove('hidden');
-    updateUserDisplay(user);
-    if (!appInitialized) {
-      PocketBank.app.init();
-      appInitialized = true;
-    }
+    PocketBank.kidsService.unsubscribeKids();
+    PocketBank.transactionsService.unsubscribeTransactions();
+    PocketBank.familyService.clearCurrentFamily();
   }
 
   function updateUserDisplay(user) {
@@ -31,6 +26,90 @@ PocketBank.auth = (function () {
     var settingsEl = $('settings-user-email');
     if (headerEl) headerEl.textContent = email;
     if (settingsEl) settingsEl.textContent = email;
+  }
+
+  function enterApp() {
+    var familyId = PocketBank.familyService.getFamilyId();
+    if (!familyId) {
+      PocketBank.familySetup.show();
+      return Promise.resolve();
+    }
+
+    PocketBank.familySetup.hide();
+    $('auth-screen').classList.add('hidden');
+    $('app-shell').classList.remove('hidden');
+    document.body.classList.add('app-active');
+
+    return new Promise(function (resolve) {
+      var kidsReady = false;
+      var transactionsReady = false;
+      var resolved = false;
+
+      function onDataChange() {
+        if (appInitialized) {
+          PocketBank.app.refresh();
+        }
+      }
+
+      function tryInit() {
+        if (resolved || !kidsReady || !transactionsReady) return;
+        resolved = true;
+        if (!appInitialized) {
+          PocketBank.app.init();
+          appInitialized = true;
+        } else {
+          PocketBank.app.refresh();
+        }
+        resolve();
+      }
+
+      PocketBank.kidsService.subscribe(familyId, function () {
+        onDataChange();
+        if (!kidsReady) {
+          kidsReady = true;
+          tryInit();
+        }
+      });
+      PocketBank.transactionsService.subscribe(familyId, function () {
+        onDataChange();
+        if (!transactionsReady) {
+          transactionsReady = true;
+          tryInit();
+        }
+      });
+
+      setTimeout(function () {
+        if (resolved) return;
+        resolved = true;
+        if (!appInitialized) {
+          PocketBank.app.init();
+          appInitialized = true;
+        } else {
+          PocketBank.app.refresh();
+        }
+        resolve();
+      }, 300);
+    });
+  }
+
+  async function handleAuthenticatedUser(user) {
+    setLoginError('');
+    updateUserDisplay(user);
+
+    var familyId = PocketBank.familyService.getFamilyId();
+
+    if (familyId) {
+      try {
+        await PocketBank.familyService.validateAndLoadFamily(familyId, user.uid);
+        await enterApp();
+        return;
+      } catch (err) {
+        console.warn('Family validation failed:', err.message);
+      }
+    }
+
+    $('auth-screen').classList.add('hidden');
+    PocketBank.familySetup.show();
   }
 
   function setLoginError(message) {
@@ -89,6 +168,9 @@ PocketBank.auth = (function () {
 
   async function handleLogout() {
     try {
+      PocketBank.kidsService.unsubscribeKids();
+      PocketBank.transactionsService.unsubscribeTransactions();
+      PocketBank.familyService.clearCurrentFamily();
       await PocketBank.firebaseService.logout();
     } catch (err) {
       if (PocketBank.views && PocketBank.views.showToast) {
@@ -109,7 +191,22 @@ PocketBank.auth = (function () {
         e.preventDefault();
         handleLogout();
       }
+      if (e.target.closest('[data-action="copy-invite"]')) {
+        e.preventDefault();
+        var family = PocketBank.familyService.getCurrentFamily();
+        if (family && family.inviteCode) {
+          copyText(family.inviteCode);
+        }
+      }
     });
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        PocketBank.views.showToast('Invite code copied');
+      });
+    }
   }
 
   function showConfigError(message) {
@@ -125,6 +222,7 @@ PocketBank.auth = (function () {
 
   function start() {
     bindEvents();
+    PocketBank.views.init(function () {});
 
     try {
       if (!PocketBank.firebaseService.isConfigReady()) {
@@ -136,9 +234,9 @@ PocketBank.auth = (function () {
 
       PocketBank.firebaseService.onAuthStateChanged(function (user) {
         if (user) {
-          setLoginError('');
-          showApp(user);
+          handleAuthenticatedUser(user);
         } else {
+          appInitialized = false;
           showLogin();
         }
       });
@@ -149,6 +247,7 @@ PocketBank.auth = (function () {
 
   return {
     start: start,
+    enterApp: enterApp,
     handleLogout: handleLogout
   };
 })();

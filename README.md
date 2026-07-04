@@ -137,6 +137,31 @@ Email/password sign-in is required before using the app. Kids and transactions s
 
 Firebase SDK loads from Google CDN; login requires network access.
 
+## Firebase Phase 2 — Family & Kid sync
+
+Kid profiles are synced via **Firestore** for your family. Transactions remain in **localStorage** on each device.
+
+### First-time setup
+
+1. Sign in → **Create Family** (enter a name) → copy the **invite code**
+2. Share the invite code with your spouse
+3. Spouse signs in → **Join Family** → enters the code
+
+### Firestore rules
+
+Paste the contents of [`firestore.rules`](firestore.rules) into **Firebase Console → Firestore → Rules → Publish**.
+
+Also create the Firestore composite index if prompted (usually not needed for kids listener).
+
+### Data split (Phase 2)
+
+| Data | Storage |
+|------|---------|
+| Kid profiles | Firestore (`families/{id}/kids`) |
+| Transactions | localStorage (this device) |
+| Family membership | Firestore (`families/{id}`) |
+| Invite lookup | Firestore (`inviteCodes/{code}`) |
+
 ## License
 
 Personal / family use. Free and open source.
