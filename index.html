@@ -14,8 +14,16 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- App splash (shown until Firebase auth state is known) -->
+  <div id="app-splash" class="app-splash" role="status" aria-live="polite" aria-label="Loading Piggy Pal">
+    <img src="icons/icon-192.png" alt="" class="splash-logo" width="96" height="96">
+    <p class="splash-title">Piggy Pal</p>
+    <p class="splash-text">Loading Piggy Pal…</p>
+    <div class="splash-spinner" aria-hidden="true"></div>
+  </div>
+
   <!-- Login screen (Phase 1 — Firebase Email/Password) -->
-  <div id="auth-screen" class="auth-screen">
+  <div id="auth-screen" class="auth-screen hidden" hidden>
     <div class="auth-card">
       <img src="icons/icon-192.png" alt="" class="auth-logo" width="96" height="96">
       <h1 class="auth-title">Piggy Pal</h1>

@@ -5,12 +5,19 @@ PocketBank.auth = (function () {
   var appInitialized = false;
   var loginPending = false;
   var enterAppPromise = null;
+  var authStateResolved = false;
 
   function $(id) {
     return document.getElementById(id);
   }
 
+  function hideSplash() {
+    var el = $('app-splash');
+    if (el) el.classList.add('hidden');
+  }
+
   function showLogin() {
+    $('auth-screen').removeAttribute('hidden');
     $('auth-screen').classList.remove('hidden');
     $('family-setup-screen').classList.add('hidden');
     $('app-shell').classList.add('hidden');
@@ -40,6 +47,7 @@ PocketBank.auth = (function () {
     }
 
     PocketBank.familySetup.hide();
+    $('auth-screen').setAttribute('hidden', '');
     $('auth-screen').classList.add('hidden');
     $('app-shell').classList.remove('hidden');
     document.body.classList.add('app-active');
@@ -117,6 +125,7 @@ PocketBank.auth = (function () {
       }
     }
 
+    $('auth-screen').setAttribute('hidden', '');
     $('auth-screen').classList.add('hidden');
     PocketBank.familySetup.show();
   }
@@ -228,6 +237,7 @@ PocketBank.auth = (function () {
   }
 
   function showConfigError(message) {
+    hideSplash();
     showLogin();
     setLoginError(message);
     var form = $('login-form');
@@ -251,6 +261,10 @@ PocketBank.auth = (function () {
       PocketBank.firebaseService.init();
 
       PocketBank.firebaseService.onAuthStateChanged(function (user) {
+        if (!authStateResolved) {
+          authStateResolved = true;
+          hideSplash();
+        }
         if (user) {
           handleAuthenticatedUser(user);
         } else {
