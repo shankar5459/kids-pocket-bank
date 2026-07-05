@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pocketbank-v8';
+const CACHE_NAME = 'pocketbank-v9';
 const ASSETS = [
   './',
   './index.html',
