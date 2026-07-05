@@ -1,171 +1,250 @@
-# Piggy Pal
+# Piggy Pal 🐷
 
-A free, mobile-first PWA for tracking kids' pocket money — earnings, spending, and balances. Family sync via Firebase Firestore.
+Piggy Pal is a free, mobile-first Progressive Web App (PWA) that helps parents manage their children's pocket money, allowance, savings, and spending. It supports real-time family synchronization using Firebase and works offline after installation.
 
-**Live demo:** `https://shankar5459.github.io/kids-pocket-bank/`
+**Live app:** [https://shankar5459.github.io/kids-pocket-bank/](https://shankar5459.github.io/kids-pocket-bank/)
 
-## Features
+---
 
-- **Multiple kids** — each with their own balance and transaction history
-- **Manual transactions** — credit (money in) and debit (money out) with date, description, and category
-- **Derived balances** — always calculated from transactions, never stored separately
-- **Bank statement view** — running balance, filters, search; mobile cards and desktop table
-- **Edit & delete transactions** — fix mistakes without correction entries
-- **Negative balance warning** — allowed after confirmation
-- **JSON backup & restore** — export/import full data to move between devices
-- **CSV export** — per-kid statement download
-- **Print / PDF** — print-friendly statement layout
-- **Offline PWA** — install on phone home screen; works offline after first load
+## ✨ Features
 
-## Categories
+### 👨‍👩‍👧‍👦 Family
 
-Pocket Money · Allowance · Gift · Reward · Food · Toys · Books · Savings · Other
+- Firebase Authentication
+- Create Family
+- Join Family using Invite Code
+- Shared family wallet experience
+- Real-time synchronization across devices
 
-Selecting **Other** lets you enter a custom category name (stored in the same `category` field).
+### 👧 Kids
 
-Legacy backups using `pocketbank-backup` format still import correctly.
+- Multiple kids
+- Individual balances
+- Individual bank statements
+- Custom avatars
+- Custom colors
 
-## Tech stack
+### 💰 Transactions
 
-| Layer | Choice |
-|---|---|
-| Frontend | HTML, CSS, vanilla JavaScript |
-| Storage | `localStorage` (`pocketbank.v1`) |
-| Hosting | GitHub Pages (static, free, HTTPS) |
-| PWA | `manifest.json` + `service-worker.js` |
+- Credit
+- Debit
+- Weekly/Monthly Allowance
+- Rewards
+- Gifts
+- Food
+- Toys
+- Books
+- Savings
+- Custom categories
+- Edit transactions
+- Delete transactions
+- Running balance
+- Negative balance warning
+
+### 🏦 Bank Statement
+
+- Running balance
+- Filters
+- Search
+- Mobile cards
+- Desktop table
+- CSV Export
+- Print / PDF
+
+### ☁️ Cloud Sync
+
+- Firebase Firestore
+- Real-time synchronization
+- Offline support
+- Sync status indicator
+
+### 💾 Backup & Restore
+
+- JSON Export
+- JSON Import
+- Local-to-cloud migration
+- CSV Export
+
+### 📱 Progressive Web App
+
+- Installable
+- Offline capable
+- Mobile-first
+- Works on Android & iPhone
+
+---
+
+## 🛠 Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | HTML, CSS, Vanilla JavaScript |
+| Authentication | Firebase Authentication |
+| Database | Cloud Firestore |
+| Hosting | GitHub Pages |
+| Offline | Service Worker + IndexedDB |
 | Currency | INR (₹) |
 
-No build step, no npm, no backend.
+- Pure static frontend application
+- No backend server
+- No build process
+- No package manager required
 
-## Run locally
+---
 
-A local server is required for the service worker (opening `index.html` directly via `file://` will not register the PWA).
+## 🚀 Run Locally
 
 ```bash
+git clone https://github.com/shankar5459/kids-pocket-bank.git
 cd kids-pocket-bank
 python3 -m http.server 8765
 ```
 
 Open [http://localhost:8765](http://localhost:8765)
 
-## Deploy to GitHub Pages
+A local HTTP server is required. Opening `index.html` directly via `file://` will not work correctly because **Service Worker**, **Firebase Authentication**, and **PWA features** cannot be fully tested without HTTP.
 
-This app is plain static HTML — no build step. Use **one** of these methods (not both).
+---
 
-### Option A — Deploy from branch (simplest)
+## 🌍 Deployment
 
-1. Push this repo to GitHub (public repo for free Pages).
-2. Go to **Settings → Pages**.
-3. **Build and deployment → Source:** `Deploy from a branch`
-4. **Branch:** `main` → folder **`/ (root)`** → Save
-5. Wait 1–2 minutes. Site: `https://shankar5459.github.io/kids-pocket-bank/`
+This project is hosted on **GitHub Pages**. Every push to the `main` branch automatically publishes the latest version.
 
-No GitHub Actions workflow is required for this option.
+**Pages configuration:**
 
-### Option B — GitHub Actions (workflow included)
+| Setting | Value |
+|---------|-------|
+| Source | Deploy from branch |
+| Branch | `main` |
+| Folder | `/ (root)` |
 
-If Pages source is set to **GitHub Actions**, use the workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
+After pushing, allow 1–2 minutes for the site to update. All asset paths are relative, so the app works under the GitHub Pages subpath.
 
-1. **Settings → Pages → Build and deployment → Source:** `GitHub Actions`
-2. **Settings → Actions → General → Workflow permissions:** choose **Read and write permissions** → Save
-3. Push to `main` (or re-run the failed workflow from the **Actions** tab)
+---
 
-If deploy fails with *"Deployment failed, try again later"*:
+## 📱 Install
 
-- Confirm **Source** is `GitHub Actions` (not branch + Actions at the same time)
-- Re-run the workflow after 5–10 minutes (can be a transient GitHub Pages error)
-- Or switch to **Option A** above — recommended for this project
+**Android (Chrome)**
 
-All asset paths are relative, so the app works under any GitHub Pages subpath.
+1. Open the live app URL in Chrome
+2. Tap the menu (⋮)
+3. Select **Install app**
 
-## Install on your phone
+**iPhone (Safari)**
 
-**Android (Chrome):** Open the hosted URL → menu → **Install app** or **Add to Home screen**.
+1. Open the live app URL in Safari
+2. Tap **Share**
+3. Select **Add to Home Screen**
 
-**iPhone (Safari):** Open the hosted URL → **Share** → **Add to Home Screen**.
+After the first online visit, the installed app works offline with cached assets and Firestore persistence.
 
-After the first online visit, the app works offline.
+---
 
-## Data & privacy
+## 🔥 Firebase Setup
 
-- All kid profiles and transactions are stored in **this browser's local storage only**.
-- GitHub Pages serves the app files (HTML, CSS, JS). **No transaction data is uploaded to GitHub or any server.**
-- Clearing browser data erases your records.
-- **Export a JSON backup regularly** (Settings → Export Backup) to preserve history and move data between devices.
+To run your own instance:
 
-## Project structure
+1. **Create a Firebase project** at [Firebase Console](https://console.firebase.google.com/)
+2. **Add a Web App** and copy the config object
+3. **Enable Authentication** → Sign-in method → **Email/Password**
+4. **Create a Firestore database** in **Production mode**
+5. Update [`js/firebase-config.js`](js/firebase-config.js) with your Firebase config (do not commit secrets to a public repo if using private rules)
+6. **Publish Firestore rules** — paste the contents of [`firestore.rules`](firestore.rules) into Firebase Console → Firestore → Rules → Publish
+7. **Add authorized domains** under Authentication → Settings → Authorized domains:
+   - `localhost` (local development)
+   - Your GitHub Pages domain (e.g. `shankar5459.github.io`)
+
+Create user accounts manually in Firebase Console (the app does not include public sign-up).
+
+---
+
+## 📂 Firestore Structure
 
 ```
-index.html              # App shell, views, modals
-manifest.json           # PWA manifest
-service-worker.js       # Offline asset cache
-css/styles.css          # Mobile-first bank theme
+families
+└── {familyId}
+    ├── kids
+    │   └── {kidId}
+    └── transactions
+        └── {transactionId}
+
+inviteCodes
+└── {inviteCode}
+```
+
+**Family document:** name, invite code, members, timestamps
+
+**Kid document:** name, avatar, color, timestamps
+
+**Transaction document:** kidId, type (credit/debit), amountPaise, date, description, category, audit fields
+
+**Invite code document:** maps invite code → familyId
+
+---
+
+## 🔐 Data & Privacy
+
+- Authentication is handled by **Firebase Authentication**
+- Family data is stored securely in **Cloud Firestore**
+- GitHub Pages hosts only static application files
+- No transaction or family data is stored in GitHub
+- Data synchronizes only between authorized family members
+- JSON backup can be exported anytime from Settings
+- Offline support is available via Service Worker and Firestore persistence
+
+---
+
+## 📂 Project Structure
+
+```
+index.html
+manifest.json
+service-worker.js
+firestore.rules
+LICENSE
+
+css/
+  styles.css
+
 js/
-  utils.js              # Formatting, categories, helpers
-  store.js              # localStorage CRUD, balances
-  backup.js             # JSON export/import
-  export.js             # CSV + print
-  views.js              # UI rendering
-  app.js                # Routing and events
-  sw-register.js        # Service worker registration
-icons/                  # PWA icons (192, 512)
+  auth.js
+  firebase-config.js
+  firebase-service.js
+  family-service.js
+  family-setup.js
+  kids-service.js
+  transactions-service.js
+  sync-service.js
+  backup.js
+  export.js
+  store.js
+  utils.js
+  views.js
+  app.js
+  sw-register.js
+
+icons/
 ```
 
-## Backup format
+---
 
-Exported files are named `piggy-pal-backup-YYYY-MM-DD.json`:
+## 📸 Screenshots
 
-```json
-{
-  "format": "piggy-pal-backup",
-  "version": 1,
-  "exportedAt": "2026-07-04T10:30:00.000Z",
-  "data": {
-    "kids": [...],
-    "transactions": [...]
-  }
-}
-```
+Coming soon...
 
-Import replaces all local data after validation and confirmation.
+---
 
-## Firebase (Phase 1 — login only)
+## 📌 Roadmap
 
-Email/password sign-in is required before using the app. Kids and transactions still use **localStorage** only (no Firestore sync yet).
+- Parent PIN
+- Savings Goals
+- Monthly Allowance Automation
+- Spending Charts
+- Kid Achievements
+- Dark Mode
 
-1. Edit [`js/firebase-config.js`](js/firebase-config.js) with your Firebase Web App config.
-2. In Firebase Console → **Authentication** → create user accounts manually (no in-app sign-up).
-3. In Firebase Console → **Authentication** → **Settings** → **Authorized domains**, add:
-   - `localhost` (local testing)
-   - `shankar5459.github.io` (or your GitHub Pages domain)
+---
 
-Firebase SDK loads from Google CDN; login requires network access.
+## 📄 License
 
-## Firebase Phase 2 — Family & Kid sync
-
-Kid profiles are synced via **Firestore** for your family. Transactions remain in **localStorage** on each device.
-
-### First-time setup
-
-1. Sign in → **Create Family** (enter a name) → copy the **invite code**
-2. Share the invite code with your spouse
-3. Spouse signs in → **Join Family** → enters the code
-
-### Firestore rules
-
-Paste the contents of [`firestore.rules`](firestore.rules) into **Firebase Console → Firestore → Rules → Publish**.
-
-Also create the Firestore composite index if prompted (usually not needed for kids listener).
-
-### Data split (Phase 2)
-
-| Data | Storage |
-|------|---------|
-| Kid profiles | Firestore (`families/{id}/kids`) |
-| Transactions | localStorage (this device) |
-| Family membership | Firestore (`families/{id}`) |
-| Invite lookup | Firestore (`inviteCodes/{code}`) |
-
-## License
-
-Personal / family use. Free and open source.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
